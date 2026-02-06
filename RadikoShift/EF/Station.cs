@@ -27,4 +27,7 @@ public partial class Station
 
     [Column("display_order")]
     public int? DisplayOrder { get; set; }
+
+    [Column("area_name")]
+    public string? AreaName { get; set; }
 }

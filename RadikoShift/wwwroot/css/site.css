@@ -29,3 +29,21 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.program-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+    .program-item.now {
+        background-color: #fff7e6;
+    }
+
+.title {
+    font-size: 1.05rem;
+    margin-top: 4px;
+}
+
+details summary {
+    cursor: pointer;
+}

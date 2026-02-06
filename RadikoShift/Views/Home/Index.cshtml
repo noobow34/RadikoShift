@@ -1,3 +1,116 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using RadikoShift.ViewModel
+@model ProgramFilterViewModel
+
+<div class="container-fluid">
+
+    <!-- フィルタ -->
+    <div class="row g-2 mb-3">
+        <!-- 地区 -->
+        <div class="col-12 col-md-3">
+            <select id="region" class="form-select">
+                <option value="">地区</option>
+                @foreach (var s in Model.Reagions)
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- 都道府県 -->
+        <div class="col-6 col-md-3">
+            <select id="area" class="form-select" disabled>
+                <option value="">都道府県</option>
+                @foreach (var s in Model.Areas)
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- 局 -->
+        <div class="col-6 col-md-3">
+            <select id="station" class="form-select" disabled>
+                <option value="">放送局</option>
+                @foreach (var s in Model.Stations)
+                {
+                    <option value="@s.Id">@s.Name</option>
+                }
+            </select>
+        </div>
+
+        <!-- 日付 -->
+        <div class="col-12 col-md-3">
+            <input id="date"
+                   type="date"
+                   class="form-control"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+
+    <!-- 番組表 -->
+    <div id="program-table">
+        <div class="text-center text-muted">
+            条件を選択してください
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        $('#region').on('change', function () {
+            const region = $(this).val();
+
+            $('#area').prop('disabled', true).empty()
+                .append('<option value="">都道府県</option>');
+            $('#station').prop('disabled', true).empty()
+                .append('<option value="">放送局</option>');
+            $('#program-table').empty();
+
+            if (!region) return;
+
+            $.getJSON('/Home/GetAreas', { region: region })
+                .done(function (data) {
+                    $.each(data, function (index,data) {
+                        $('#area').append(
+                            $('<option>').val(data.id).text(data.name)
+                        );
+                    });
+                    $('#area').prop('disabled', false);
+                });
+        });
+
+        $('#area').on('change', function () {
+            const area = $(this).val();
+
+            $('#station').prop('disabled', true).empty()
+                .append('<option value="">放送局</option>');
+            $('#program-table').empty();
+
+            if (!area) return;
+
+            $.getJSON('/Home/GetStations', { area: area })
+                .done(function (data) {
+                    $.each(data, function (_, s) {
+                        $('#station').append(
+                            $('<option>').val(s.id).text(s.name)
+                        );
+                    });
+                    $('#station').prop('disabled', false);
+                });
+        });
+
+        $('#station, #date').on('change', function () {
+            const stationId = $('#station').val();
+            const date = $('#date').val();
+
+            if (!stationId || !date) return;
+
+            $('#program-table').load(
+                '/Home/ProgramTablePartial',
+                { stationId: stationId, date: date }
+            );
+        });
+
+    </script>
 }

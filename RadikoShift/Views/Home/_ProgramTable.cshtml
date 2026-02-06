@@ -1,0 +1,36 @@
+﻿@using RadikoShift.ViewModel
+@model List<ProgramItemViewModel>
+
+@if (!Model.Any())
+{
+    <div class="text-muted text-center">
+        番組情報がありません
+    </div>
+}
+else
+{
+    foreach (var p in Model)
+    {
+        <div class="program-item @(p.IsNow ? "now" : "")">
+            <div class="d-flex justify-content-between">
+                <strong>@p.TimeRange</strong>
+                @if (p.IsNow)
+                {
+                    <span class="badge bg-danger">ON AIR</span>
+                }
+            </div>
+
+            <div class="title">@p.Title</div>
+
+            @if (!string.IsNullOrEmpty(p.CastName))
+            {
+                <div class="text-muted small">@p.CastName</div>
+            }
+
+            <details>
+                <summary class="small">詳細</summary>
+                <p class="small">@Html.Raw(@p.Description)</p>
+            </details>
+        </div>
+    }
+}

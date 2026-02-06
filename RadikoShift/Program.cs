@@ -1,6 +1,7 @@
 using Auth0.AspNetCore.Authentication;
 using Quartz;
 using Quartz.Impl;
+using RadikoShift.EF;
 using RadikoShift.Jobs;
 
 string auth0Domain = Environment.GetEnvironmentVariable("AUTH0_DOMAIN") ?? "";
@@ -34,6 +35,12 @@ builder.Services.AddAuth0WebAppAuthentication(options =>
     options.Domain = auth0Domain;
     options.ClientId = auth0ClientId;
 });
+
+builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(options =>
+{
+    options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All);
+});
+builder.Services.AddDbContext<ShiftContext>();
 
 var app = builder.Build();
 

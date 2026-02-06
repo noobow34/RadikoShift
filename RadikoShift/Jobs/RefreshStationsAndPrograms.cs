@@ -17,6 +17,14 @@ namespace RadikoShift.Jobs
             this.JournalWriteLine("放送局取得");
             var stations = Radiko.GetStations(true).Result;
             ShiftContext sContext = new();
+            var areas = sContext.Areas.ToDictionary(a => a.AreaCode , a => a.AreaName);
+            foreach (var station in stations)
+            {
+                if (areas.TryGetValue(station.Area!, out string? value))
+                {
+                    station.AreaName = value;
+                }
+            }
             var existStations =  sContext.Stations.Where(s => (stations.Select(s => s.Id).ToArray().Contains(s.Id)));
             sContext.RemoveRange(existStations);
             sContext.Stations.AddRange(stations);
