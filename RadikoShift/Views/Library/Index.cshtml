@@ -1,0 +1,38 @@
+﻿@using RadikoShift.ViewModel
+@model IEnumerable<LibraryListViewModel>
+
+<div class="container">
+    <h3 class="mb-3">🎧 録音ライブラリ</h3>
+
+    <div id="recording-list">
+        @await Html.PartialAsync("_RecordingList", Model)
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+
+            // 削除ボタン
+            $('#recording-list').on('click', '.btn-delete', function () {
+                const id = $(this).data('id');
+
+                if (!confirm('この録音を削除しますか？')) {
+                    return;
+                }
+
+                $.post('/Library/Delete', { id: id })
+                    .done(function () {
+                        reloadList();
+                    })
+                    .fail(function () {
+                        alert('削除に失敗しました');
+                    });
+            });
+
+            function reloadList() {
+                $('#recording-list').load('/Library/Index #recording-list > *');
+            }
+        });
+    </script>
+}
