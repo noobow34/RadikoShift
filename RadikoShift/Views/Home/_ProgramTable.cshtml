@@ -18,6 +18,12 @@ else
                 {
                     <span class="badge bg-danger">ON AIR</span>
                 }
+                <button class="btn btn-sm btn-outline-primary reserve-btn"
+                        data-program-id="@p.ProgramId"
+                        data-title="@p.Title"
+                        data-time="@p.TimeRange">
+                    予約
+                </button>
             </div>
 
             <div class="title">@p.Title</div>
@@ -31,6 +37,70 @@ else
                 <summary class="small">詳細</summary>
                 <p class="small">@Html.Raw(@p.Description)</p>
             </details>
+        </div>
+        <div class="modal fade" id="reserveModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">録音予約</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-2">
+                            <div class="fw-bold" id="modalTitle"></div>
+                            <small class="text-muted" id="modalTime"></small>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-check">
+                            <input class="form-check-input repeat-option"
+                                   type="checkbox"
+                                   value="once"
+                                   id="repeatOnce"
+                                   checked>
+                            <label class="form-check-label" for="repeatOnce">
+                                今回のみ
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input repeat-option"
+                                   type="checkbox"
+                                   value="weekly"
+                                   id="repeatWeekly">
+                            <label class="form-check-label" for="repeatWeekly">
+                                毎週この時間に予約
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input repeat-option"
+                                   type="checkbox"
+                                   value="daily"
+                                   id="repeatDaily">
+                            <label class="form-check-label" for="repeatDaily">
+                                毎日この時間に予約
+                            </label>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary"
+                                data-bs-dismiss="modal">
+                            キャンセル
+                        </button>
+                        <button class="btn btn-primary" id="confirmReserve">
+                            予約する
+                        </button>
+                    </div>
+
+                </div>
+            </div>
         </div>
     }
 }

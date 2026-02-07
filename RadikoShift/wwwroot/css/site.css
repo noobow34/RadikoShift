@@ -47,3 +47,28 @@ body {
 details summary {
     cursor: pointer;
 }
+
+.navbar-logo {
+    height: 40px; /* PC基準 */
+    width: auto;
+}
+
+/* PC */
+.navbar-logo {
+    height: 40px;
+    width: auto;
+}
+
+/* タブレット */
+@media (max-width: 992px) {
+    .navbar-logo {
+        height: 34px;
+    }
+}
+
+/* スマホ */
+@media (max-width: 576px) {
+    .navbar-logo {
+        height: 28px;
+    }
+}

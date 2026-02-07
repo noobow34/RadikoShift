@@ -14,6 +14,8 @@ public partial class ShiftContext : DbContext
 
     public virtual DbSet<Area> Areas { get; set; }
 
+    public virtual DbSet<Reservation> Reservations { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         string connectionString = Environment.GetEnvironmentVariable("RADIKOSHIFT_CONNECTION_STRING") ?? "";
@@ -30,6 +32,18 @@ public partial class ShiftContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("stations_pkey");
         });
+
+        modelBuilder.Entity<Reservation>()
+            .Property(r => r.StartTime)
+            .HasColumnType("time");
+
+        modelBuilder.Entity<Reservation>()
+            .Property(r => r.EndTime)
+            .HasColumnType("time");
+
+        modelBuilder.Entity<Reservation>()
+            .Property(r => r.TargetDate)
+            .HasColumnType("date");
 
         OnModelCreatingPartial(modelBuilder);
     }

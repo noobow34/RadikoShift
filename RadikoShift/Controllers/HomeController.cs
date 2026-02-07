@@ -65,6 +65,7 @@ namespace RadikoShift.Controllers
                 .OrderBy(p => p.StartTime)
                 .Select(p => new ProgramItemViewModel
                 {
+                    ProgramId = p.Id,
                     StartTime = p.StartTime!.Value,
                     EndTime = p.EndTime!.Value,
                     Title = p.Title ?? "",

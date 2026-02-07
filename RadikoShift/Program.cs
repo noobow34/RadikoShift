@@ -1,6 +1,7 @@
 using Auth0.AspNetCore.Authentication;
 using Quartz;
 using Quartz.Impl;
+using RadikoShift;
 using RadikoShift.EF;
 using RadikoShift.Jobs;
 
@@ -41,6 +42,8 @@ builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(o
     options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All);
 });
 builder.Services.AddDbContext<ShiftContext>();
+
+builder.Services.AddSingleton<QuartzScheduler>(new QuartzScheduler(sch));
 
 var app = builder.Build();
 

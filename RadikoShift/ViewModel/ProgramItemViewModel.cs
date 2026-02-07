@@ -2,6 +2,7 @@
 {
     public class ProgramItemViewModel
     {
+        public required string ProgramId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
 

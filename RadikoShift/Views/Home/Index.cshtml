@@ -112,5 +112,48 @@
             );
         });
 
+                let selectedProgram = null;
+
+        $(document).on('click', '.reserve-btn', function () {
+            selectedProgram = {
+                programId: $(this).data('program-id'),
+                title: $(this).data('title'),
+                time: $(this).data('time')
+            };
+
+            $('#modalTitle').text(selectedProgram.title);
+            $('#modalTime').text(`${selectedProgram.time}`);
+
+            // 初期状態
+            $('.repeat-option').prop('checked', false);
+            $('#repeatOnce').prop('checked', true);
+
+            const modal = new bootstrap.Modal('#reserveModal');
+            modal.show();
+        });
+
+        $(document).on('change', '.repeat-option', function () {
+            $('.repeat-option').not(this).prop('checked', false);
+            $(this).prop('checked', true);
+        });
+
+        $(document).on('click', '#confirmReserve', function () {
+            const repeatType = $('.repeat-option:checked').val();
+
+            const payload = {
+                programId: selectedProgram.programId,
+                repeatType: repeatType
+            };
+
+            $.post('/Reservation/Create', payload)
+                .done(() => {
+                    alert('予約しました');
+                    bootstrap.Modal.getInstance(
+                        document.getElementById('reserveModal')
+                    ).hide();
+                })
+                .fail(() => alert('予約に失敗しました'));
+        });
+
     </script>
 }
