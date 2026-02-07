@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using ATL;
+using Quartz;
 using RadikoShift.EF;
 using System.Diagnostics;
 
@@ -61,6 +62,16 @@ namespace RadikoShift.Jobs
                     shiftContext.SaveChangesAsync();
                     return Task.CompletedTask;
                 }
+                //タグ埋め込み
+                Track recorded = new(fileName);
+                recorded.Title = reservation.ProgramName;
+                recorded.Save();
+
+                //保存
+
+                //ファイル削除
+                //File.Delete(fileName);
+
                 this.JournalWriteLine($"録音完了 予約ID:{reservationId} ファイル名:{fileName}");
             }
             else
