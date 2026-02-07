@@ -43,12 +43,25 @@ namespace RadikoShift.Jobs
                 string endTime = endDateTime.ToString("yyyyMMddHHmmss");
                 string fileName = $@"0_{baseDate:yyyyMMdd}_{reservation.ProgramName}.m4a";
                 string arg = $@"-s {station} -f {startTime} -t {endTime} -m ""{radikoMail}"" -p ""{radikoPass}"" -o ""{fileName}""";
-                ProcessStartInfo recProcess = new()
+                ProcessStartInfo recProcessInfo = new()
                 {
                     FileName = "Tools/rec_radiko_ts.sh",
                     Arguments = arg
                 };
-                this.JournalWriteLine($"録音コマンド実行: {recProcess.FileName} {recProcess.Arguments}");
+                this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {recProcessInfo.Arguments}");
+                Process recProcess = new();
+                recProcess.StartInfo = recProcessInfo;
+                recProcess.Start();
+                recProcess.WaitForExitAsync().Wait();
+                if (recProcess.ExitCode != 0)
+                {
+                    this.JournalWriteLine($"録音失敗 予約ID:{reservationId} 録音コマンドの終了コード:{recProcess.ExitCode}");
+                    reservation.Status = ReservationStatus.Failed;
+                    reservation.UpdatedAt = DateTime.Now;
+                    shiftContext.SaveChangesAsync();
+                    return Task.CompletedTask;
+                }
+                this.JournalWriteLine($"録音完了 予約ID:{reservationId} ファイル名:{fileName}");
             }
             else
             {
