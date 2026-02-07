@@ -69,9 +69,30 @@ namespace RadikoShift.Jobs
                 recorded.Save();
 
                 //保存
+                byte[] recordedByte = File.ReadAllBytes(fileName);
+                var recording = new Recording
+                {
+                    ReservationId = reservation.Id,
+                    ProgramId = reservation.ProgramId,
+                    StationId = reservation.StationId,
+                    StationName = reservation.StationName,
+                    ProgramName = reservation.ProgramName,
+                    CastName = reservation.CastName,
+
+                    StartTime = reservation.StartTime,
+                    EndTime = reservation.EndTime,
+
+                    FileName = fileName,
+                    MimeType = "audio/mp4",
+                    FileSize = recordedByte.Length,
+                    AudioData = recordedByte,
+
+                    CreatedAt = DateTime.UtcNow
+                };
+                shiftContext.Recordings.Add(recording);
 
                 //ファイル削除
-                //File.Delete(fileName);
+                File.Delete(fileName);
 
                 this.JournalWriteLine($"録音完了 予約ID:{reservationId} ファイル名:{fileName}");
             }

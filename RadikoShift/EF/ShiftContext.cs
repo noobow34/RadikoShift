@@ -16,6 +16,8 @@ public partial class ShiftContext : DbContext
 
     public virtual DbSet<Reservation> Reservations { get; set; }
 
+    public virtual DbSet<Recording> Recordings { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         string connectionString = Environment.GetEnvironmentVariable("RADIKOSHIFT_CONNECTION_STRING") ?? "";
