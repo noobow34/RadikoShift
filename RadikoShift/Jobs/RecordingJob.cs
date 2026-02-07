@@ -7,7 +7,7 @@ namespace RadikoShift.Jobs
 {
     public class RecordingJob : IJob
     {
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
             int reservationId = context.JobDetail.JobDataMap.GetInt("ReservationId")!;
             this.JournalWriteLine($"録音開始 予約ID:{reservationId}");
@@ -18,7 +18,7 @@ namespace RadikoShift.Jobs
             {
                 reservation.Status = ReservationStatus.Running;
                 reservation.UpdatedAt = DateTime.Now;
-                shiftContext.SaveChangesAsync();
+                await shiftContext.SaveChangesAsync();
 
                 string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
                 string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
@@ -60,8 +60,8 @@ namespace RadikoShift.Jobs
                     this.JournalWriteLine($"録音失敗 予約ID:{reservationId} 録音コマンドの終了コード:{recProcess.ExitCode}");
                     reservation.Status = ReservationStatus.Failed;
                     reservation.UpdatedAt = DateTime.Now;
-                    shiftContext.SaveChangesAsync();
-                    return Task.CompletedTask;
+                    await shiftContext.SaveChangesAsync();
+                    return;
                 }
                 //タグ埋め込み
                 Track recorded = new(fileName);
@@ -92,7 +92,7 @@ namespace RadikoShift.Jobs
                     CreatedAt = DateTime.UtcNow
                 };
                 shiftContext.Recordings.Add(recording);
-                shiftContext.SaveChangesAsync();
+                await shiftContext.SaveChangesAsync();
                 this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{recording.Id}");
 
                 //ファイル削除                
@@ -102,16 +102,14 @@ namespace RadikoShift.Jobs
             else
             {
                 this.JournalWriteLine($"録音失敗 予約ID:{reservationId} が見つかりません");
-                return Task.CompletedTask;
+                return;
             }
 
             reservation.Status = ReservationStatus.Completed;
             reservation.UpdatedAt = DateTime.Now;
-            shiftContext.SaveChangesAsync();
+            await shiftContext.SaveChangesAsync();
             this.JournalWriteLine($"ステータス更新");
             this.JournalWriteLine($"録音完了 予約ID:{reservationId}");
-
-            return Task.CompletedTask;
         }
     }
 }
