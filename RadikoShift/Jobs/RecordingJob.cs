@@ -42,7 +42,7 @@ namespace RadikoShift.Jobs
                 string startTime = startDateTime.ToString("yyyyMMddHHmmss");
                 string endTime = endDateTime.ToString("yyyyMMddHHmmss");
                 string fileName = $@"0_{baseDate:yyyyMMdd}_{reservation.ProgramName}.m4a";
-                string arg = $@"-s {station} -f {startDateTime} -t {endDateTime} -m ""{radikoMail}"" -p ""{radikoPass}"" -o ""{fileName}""";
+                string arg = $@"-s {station} -f {startTime} -t {endTime} -m ""{radikoMail}"" -p ""{radikoPass}"" -o ""{fileName}""";
                 ProcessStartInfo recProcess = new()
                 {
                     FileName = "Tools/rec_radiko_ts.sh",
