@@ -79,8 +79,8 @@ namespace RadikoShift.Jobs
                     ProgramName = reservation.ProgramName,
                     CastName = reservation.CastName,
 
-                    StartTime = reservation.StartTime,
-                    EndTime = reservation.EndTime,
+                    StartTime = startDateTime,
+                    EndTime = endDateTime,
 
                     FileName = fileName,
                     MimeType = "audio/mp4",

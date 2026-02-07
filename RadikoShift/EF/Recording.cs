@@ -32,10 +32,10 @@ namespace RadikoShift.EF
         public string? CastName { get; set; }
 
         [Column("start_time")]
-        public TimeOnly StartTime { get; set; }
+        public DateTime StartTime { get; set; }
 
         [Column("end_time")]
-        public TimeOnly EndTime { get; set; }
+        public DateTime EndTime { get; set; }
 
         [Column("file_name")]
         [Required]
