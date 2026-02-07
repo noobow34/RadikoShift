@@ -19,9 +19,6 @@ public partial class Station
     [Column("area")]
     public string? Area { get; set; }
 
-    [Column("code")]
-    public string? Code { get; set; }
-
     [Column("name")]
     public string? Name { get; set; }
 

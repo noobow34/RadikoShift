@@ -74,10 +74,9 @@ namespace RadikoShift.Radio
                         var url = station.Descendants("href").First().Value;
                         res.Add(new Station
                         {
-                            Id = $"{Define.Radiko.TypeName}_{code}",
+                            Id = code,
                             RegionId = regionId,
                             RegionName = regionName,
-                            Code = code,
                             Name = name,
                             Area = areaId,
                             DisplayOrder = sequence++
@@ -98,12 +97,12 @@ namespace RadikoShift.Radio
         {
             return Task.Factory.StartNew(() =>
             {
-                var doc = XDocument.Load(Define.Radiko.WeeklyTimeTable.Replace("[stationCode]", station.Code));
+                var doc = XDocument.Load(Define.Radiko.WeeklyTimeTable.Replace("[stationCode]", station.Id));
 
                 return doc.Descendants("prog")
                     .Select(prog => new EF.Program()
                     {
-                        Id = station.Code + prog.Attribute("ft")?.Value + prog.Attribute("to")?.Value,
+                        Id = station.Id + prog.Attribute("ft")?.Value + prog.Attribute("to")?.Value,
                         StartTime = Utility.Text.StringToDate(prog.Attribute("ft")?.Value!),
                         EndTime = Utility.Text.StringToDate(prog.Attribute("to")?.Value!),
                         Title = prog.Element("title")?.Value.Trim(),

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Quartz.Core;
 using RadikoShift.EF;
 using System;
@@ -18,16 +19,28 @@ namespace RadikoShift.Controllers
             _scheduler = scheduler;
         }
 
+        public async Task<IActionResult> Index()
+        {
+            var reservations = await _db.Reservations.Where(r => r.Status == ReservationStatus.Scheduled || r.Status == ReservationStatus.Running)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            return View(reservations);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(CreateReservationRequest req)
         {
             var prg = await _db.Programs.FindAsync(req.ProgramId);
+            var sta = await _db.Stations.FindAsync(prg!.StationId);
 
             var reservation = new Reservation
             {
                 ProgramId = req.ProgramId,
                 StationId = prg!.StationId!,
+                StationName = sta!.Name,
                 ProgramName = prg!.Title,
+                CastName = prg!.CastName,
 
                 StartTime = TimeOnly.FromDateTime(prg.StartTime!.Value),
                 EndTime = TimeOnly.FromDateTime(prg.EndTime!.Value),

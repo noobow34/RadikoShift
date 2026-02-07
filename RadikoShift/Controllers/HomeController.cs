@@ -23,7 +23,9 @@ namespace RadikoShift.Controllers
                 .Select(g => new IdNamePair() { Id = g.Key.RegionId,Name = g.Key.RegionName,DisplayOrder = g.Min(x => x.DisplayOrder) ?? 0})
                 .OrderBy(r => r.DisplayOrder)
                 .ToList();
-            var vm = new ProgramFilterViewModel() { Reagions = reagions };
+            string minDate = _db.Programs.Min(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
+            string maxDate = _db.Programs.Max(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
+            var vm = new ProgramFilterViewModel() { Reagions = reagions,MinDate = minDate,MaxDate = maxDate };
 
             return View(vm);
         }

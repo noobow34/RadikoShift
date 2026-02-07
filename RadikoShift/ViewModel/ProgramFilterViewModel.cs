@@ -5,6 +5,8 @@
         public string SelectedReagion { get; set; } = "";
         public string SelectedArea { get; set; } = "";
         public string SelectedStation { get; set; } = "";
+        public string MinDate { get; set; } = "";
+        public string MaxDate { get; set; } ="";
         public DateTime SelectedDate { get; set; } = DateTime.Today;
 
         public List<IdNamePair> Reagions { get; set; } = new();

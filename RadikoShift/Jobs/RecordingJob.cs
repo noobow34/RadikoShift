@@ -22,7 +22,7 @@ namespace RadikoShift.Jobs
 
                 string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
                 string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
-                string station = reservation.StationId.Replace($"{Define.Radiko.TypeName}_","");
+                string station = reservation.StationId;
                 DateOnly baseDate;
                 if (reservation.TargetDate == null)
                 {
@@ -65,6 +65,7 @@ namespace RadikoShift.Jobs
                 //タグ埋め込み
                 Track recorded = new(fileName);
                 recorded.Title = reservation.ProgramName;
+                recorded.Artist = $"{reservation.StationName}-{reservation.CastName}";
                 recorded.Save();
 
                 //保存

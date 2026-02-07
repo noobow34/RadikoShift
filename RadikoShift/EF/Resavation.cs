@@ -20,8 +20,14 @@ namespace RadikoShift.EF
         [Required]
         public string StationId { get; set; } = null!;
 
+        [Column("station_name")]
+        public string? StationName { get; set; }
+
         [Column("program_name")]
         public string? ProgramName { get; set; }
+
+        [Column("cast_name")]
+        public string? CastName { get; set; }
 
         // 毎回共通の開始・終了時刻
         [Column("start_time")]
@@ -38,7 +44,6 @@ namespace RadikoShift.EF
         [Column("repeat_type")]
         public RepeatType RepeatType { get; set; }
 
-        // Weekly用（曜日ビットフラグ）
         [Column("repeat_days")]
         public DayOfWeek? RepeatDays { get; set; }
 

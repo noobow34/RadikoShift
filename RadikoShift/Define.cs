@@ -25,11 +25,6 @@
             public const string LoginCheck = "https://radiko.jp/ap/member/webapi/member/login/check";
 
             /// <summary>
-            /// 種別
-            /// </summary>
-            public const string TypeName = "radiko";
-
-            /// <summary>
             /// 放送局一覧(すべて)
             /// </summary>
             public const string StationListFull = "http://radiko.jp/v3/station/region/full.xml";
