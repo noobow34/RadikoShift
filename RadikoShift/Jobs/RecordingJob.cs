@@ -43,13 +43,14 @@ namespace RadikoShift.Jobs
                 string startTime = startDateTime.ToString("yyyyMMddHHmmss");
                 string endTime = endDateTime.ToString("yyyyMMddHHmmss");
                 string fileName = $@"0_{baseDate:yyyyMMdd}_{reservation.ProgramName}.m4a";
-                string arg = $@"-s {station} -f {startTime} -t {endTime} -m ""{radikoMail}"" -p ""{radikoPass}"" -o ""{fileName}""";
+                string arg1 = $@"-s {station} -f {startTime} -t {endTime} -o ""{fileName}""";
+                string arg2 = $@"-m ""{radikoMail}"" -p ""{radikoPass}""";
                 ProcessStartInfo recProcessInfo = new()
                 {
                     FileName = "Tools/rec_radiko_ts.sh",
-                    Arguments = arg
+                    Arguments = $"{arg1} {arg2}"
                 };
-                this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {recProcessInfo.Arguments}");
+                this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {arg1} -m *** -p ***");
                 Process recProcess = new();
                 recProcess.StartInfo = recProcessInfo;
                 recProcess.Start();
@@ -67,8 +68,9 @@ namespace RadikoShift.Jobs
                 recorded.Title = reservation.ProgramName;
                 recorded.Artist = $"{reservation.StationName}-{reservation.CastName}";
                 recorded.Save();
+                this.JournalWriteLine($"録音ファイルタグ埋め込み");
 
-                //保存
+                //保存             
                 byte[] recordedByte = File.ReadAllBytes(fileName);
                 var recording = new Recording
                 {
@@ -90,11 +92,12 @@ namespace RadikoShift.Jobs
                     CreatedAt = DateTime.UtcNow
                 };
                 shiftContext.Recordings.Add(recording);
+                shiftContext.SaveChangesAsync();
+                this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{recording.Id}");
 
-                //ファイル削除
+                //ファイル削除                
                 File.Delete(fileName);
-
-                this.JournalWriteLine($"録音完了 予約ID:{reservationId} ファイル名:{fileName}");
+                this.JournalWriteLine($"録音ファイル削除: {fileName}");
             }
             else
             {
@@ -105,6 +108,8 @@ namespace RadikoShift.Jobs
             reservation.Status = ReservationStatus.Completed;
             reservation.UpdatedAt = DateTime.Now;
             shiftContext.SaveChangesAsync();
+            this.JournalWriteLine($"ステータス更新");
+            this.JournalWriteLine($"録音完了 予約ID:{reservationId}");
 
             return Task.CompletedTask;
         }
