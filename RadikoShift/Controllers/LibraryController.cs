@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RadikoShift.EF;
 using RadikoShift.ViewModel;
 
 namespace RadikoShift.Controllers
 {
+    [Authorize]
     public class LibraryController : Controller
     {
         private readonly ShiftContext _db;

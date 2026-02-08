@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RadikoShift.EF;
 
 namespace RadikoShift.Controllers
 {
+    [Authorize]
     public class ReservationController : Controller
     {
         private readonly ShiftContext _db;
