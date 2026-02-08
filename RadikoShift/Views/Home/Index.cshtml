@@ -2,6 +2,7 @@
 @model ProgramFilterViewModel
 
 <div class="container-fluid">
+    <h3 class="mb-3">🗓️ 番組表</h3>
 
     <!-- フィルタ -->
     <div class="row g-2 mb-3">
@@ -56,6 +57,19 @@
         </div>
     </div>
 
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="reserveToast" class="toast align-items-center text-bg-success border-0"
+         role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                予約しました
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast"></button>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -149,7 +163,12 @@
 
             $.post('/Reservation/Create', payload)
                 .done(() => {
-                    alert('予約しました');
+                    const toastEl = document.getElementById('reserveToast');
+                    const toast = new bootstrap.Toast(toastEl, {
+                        delay: 2000   // 2秒で自動消滅
+                    });
+                    toast.show();
+
                     bootstrap.Modal.getInstance(
                         document.getElementById('reserveModal')
                     ).hide();

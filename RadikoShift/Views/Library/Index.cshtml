@@ -9,29 +9,82 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">削除確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                この録音を削除しますか？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    キャンセル
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    削除する
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="deleteToast" class="toast text-bg-success border-0">
+        <div class="toast-body">
+            削除しました
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         $(function () {
 
-            // 削除ボタン
+            let deleteTargetId = null;
+
+            // 削除ボタン → モーダル表示
             $('#recording-list').on('click', '.btn-delete', function () {
-                const id = $(this).data('id');
+                deleteTargetId = $(this).data('id');
 
-                if (!confirm('この録音を削除しますか？')) {
-                    return;
-                }
+                const modal = new bootstrap.Modal('#deleteModal');
+                modal.show();
+            });
 
-                $.post('/Library/Delete', { id: id })
+            // モーダルの「削除する」
+            $('#confirmDelete').on('click', function () {
+                if (!deleteTargetId) return;
+
+                $.post('/Library/Delete', { id: deleteTargetId })
                     .done(function () {
+                        showToast('削除しました', 'success');
                         reloadList();
                     })
                     .fail(function () {
-                        alert('削除に失敗しました');
+                        showToast('削除に失敗しました', 'danger');
+                    })
+                    .always(function () {
+                        bootstrap.Modal.getInstance(
+                            document.getElementById('deleteModal')
+                        ).hide();
+                        deleteTargetId = null;
                     });
             });
 
             function reloadList() {
                 $('#recording-list').load('/Library/Index #recording-list > *');
+            }
+
+            function showToast(message, type) {
+                const toastEl = document.getElementById('deleteToast');
+
+                toastEl.classList.remove('text-bg-success', 'text-bg-danger');
+                toastEl.classList.add(`text-bg-${type}`);
+                toastEl.querySelector('.toast-body').textContent = message;
+
+                new bootstrap.Toast(toastEl, { delay: 2000 }).show();
             }
         });
     </script>

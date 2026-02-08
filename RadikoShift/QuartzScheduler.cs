@@ -17,6 +17,14 @@ namespace RadikoShift
         {
             var jobKey = new JobKey($"reservation-{reservation.Id}");
 
+            if (await _scheduler.CheckExists(jobKey))
+            {
+                this.JournalWriteLine($"既存の予約をSchedulerから削除します：{reservation}");
+                await _scheduler.DeleteJob(jobKey);
+            }
+
+            this.JournalWriteLine($"予約をSchedulerに登録します：{reservation}");
+
             var job = JobBuilder.Create<RecordingJob>()
                 .WithIdentity(jobKey)
                 .UsingJobData("ReservationId", reservation.Id.ToString())
@@ -92,6 +100,15 @@ namespace RadikoShift
                         )
                 )
                 .Build();
+        }
+
+        public async Task UnregisterAsync(Reservation reservation)
+        {
+            if (_scheduler.CheckExists(new JobKey($"reservation-{reservation.Id}")).Result)
+            {
+                this.JournalWriteLine($"予約をSchedulerから削除します：{reservation}");
+                await _scheduler.DeleteJob(new JobKey($"reservation-{reservation.Id}"));
+            }
         }
     }
 }

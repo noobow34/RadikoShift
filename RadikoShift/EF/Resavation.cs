@@ -55,5 +55,31 @@ namespace RadikoShift.EF
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
+
+        public override string ToString()
+        {
+            var timeRange = $"{StartTime:HH:mm}-{EndTime:HH:mm}";
+
+            string schedule = RepeatType switch
+            {
+                RepeatType.Once => TargetDate is not null
+                    ? $"{TargetDate:yyyy/MM/dd} {timeRange}"
+                    : $"(日付未設定) {timeRange}",
+
+                RepeatType.Daily => $"毎日 {timeRange}",
+
+                RepeatType.Weekly => $"毎週 {RepeatDays.Value.ToJapanese()} {timeRange}",
+
+                _ => $"不明な予約 {timeRange}"
+            };
+
+            return
+                $"[Reservation #{Id}] " +
+                $"{schedule} / " +
+                $"{StationName ?? StationId} / " +
+                $"{ProgramName ?? "（番組名不明）"}" +
+                (string.IsNullOrWhiteSpace(CastName) ? "" : $" / {CastName}") +
+                $" / Status={Status}";
+        }
     }
 }

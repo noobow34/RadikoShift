@@ -42,8 +42,8 @@ builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(o
     options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All);
 });
 builder.Services.AddDbContext<ShiftContext>();
-
 builder.Services.AddSingleton<QuartzScheduler>(new QuartzScheduler(sch));
+builder.Services.AddHostedService<ReservationBootstrapService>();
 
 var app = builder.Build();
 

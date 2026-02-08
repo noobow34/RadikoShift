@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using RadikoShift.EF;
 using RadikoShift.ViewModel;
-using System;
 
 namespace RadikoShift.Controllers
 {

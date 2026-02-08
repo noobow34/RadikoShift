@@ -3,69 +3,8 @@
 <div class="container">
     <h3 class="mb-3">📻 予約一覧</h3>
 
-    <!-- PC: Table -->
-    <div class="d-none d-md-block">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>番組</th>
-                    <th>局</th>
-                    <th>種別</th>
-                    <th>スケジュール</th>
-                    <th>状態</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
-                {
-                    <tr>
-                        <td>@r.ProgramName</td>
-                        <td>@r.StationName</td>
-                        <td>@r.RepeatType</td>
-                        <td>
-                            @RenderSchedule(r)
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">@r.Status</span>
-                        </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger">
-                                キャンセル
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Mobile: Card -->
-    <div class="d-md-none">
-        @foreach (var r in Model)
-        {
-            <div class="card mb-2 shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title">@r.ProgramName</h6>
-                    <div class="small text-muted">@r.StationName</div>
-
-                    <div class="mt-2">
-                        <span class="badge bg-info">@r.RepeatType</span>
-                        <span class="badge bg-secondary">@r.Status</span>
-                    </div>
-
-                    <div class="mt-2 small">
-                        @RenderSchedule(r)
-                    </div>
-
-                    <div class="mt-3 text-end">
-                        <button class="btn btn-sm btn-outline-danger">
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            </div>
-        }
+    <div id="reservation-container">
+        @await Html.PartialAsync("_ReservationList", Model)
     </div>
 </div>
 
@@ -86,4 +25,27 @@
             _ => "-"
         };
     }
+}
+
+@section Scripts {
+    <script>
+        $(document).on('click', '.cancel-btn', function () {
+            const id = $(this).data('id');
+
+            if (!confirm('この予約をキャンセルしますか？')) return;
+
+            $.post('/Reservation/Cancel', { id: id })
+                .done(function () {
+                    reloadReservationList();
+                })
+                .fail(function () {
+                    alert('キャンセルに失敗しました');
+                });
+        });
+
+        function reloadReservationList() {
+            $('#reservation-container')
+                .load('/Reservation/ListPartial');
+        }
+    </script>
 }

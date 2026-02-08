@@ -1,7 +1,6 @@
 ﻿using Quartz;
 using Quartz.Impl;
 using RadikoShift.Jobs;
-using System.Reflection.Metadata;
 
 namespace RadikoShift.Test
 {

@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Quartz.Core;
 using RadikoShift.EF;
-using System;
 
 namespace RadikoShift.Controllers
 {
@@ -21,11 +19,7 @@ namespace RadikoShift.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var reservations = await _db.Reservations.Where(r => r.Status == ReservationStatus.Scheduled || r.Status == ReservationStatus.Running)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
-
-            return View(reservations);
+            return View(await GetReservationsAsync());
         }
 
         [HttpPost]
@@ -61,6 +55,34 @@ namespace RadikoShift.Controllers
             await _db.SaveChangesAsync();
 
             await _scheduler.RegisterAsync(reservation);
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> ListPartial()
+        {
+            return PartialView("_ReservationList", await GetReservationsAsync());
+        }
+
+        private async Task<List<Reservation>> GetReservationsAsync()
+        {
+            return await _db.Reservations.Where(r => r.Status == ReservationStatus.Scheduled || r.Status == ReservationStatus.Running)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var reservation = await _db.Reservations.FindAsync(id);
+            if (reservation == null)
+                return NotFound();
+
+            await _scheduler.UnregisterAsync(reservation);
+            reservation.Status = ReservationStatus.Canceled;
+            reservation.UpdatedAt = DateTime.Now;
+
+            await _db.SaveChangesAsync();
 
             return Ok();
         }
