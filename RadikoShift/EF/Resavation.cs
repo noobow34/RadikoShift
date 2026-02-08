@@ -68,7 +68,7 @@ namespace RadikoShift.EF
 
                 RepeatType.Daily => $"毎日 {timeRange}",
 
-                RepeatType.Weekly => $"毎週 {RepeatDays.Value.ToJapanese()} {timeRange}",
+                RepeatType.Weekly => $"毎週 {RepeatDays!.Value.ToJapanese()} {timeRange}",
 
                 _ => $"不明な予約 {timeRange}"
             };
