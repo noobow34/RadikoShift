@@ -50,6 +50,9 @@ namespace RadikoShift.EF
         [Column("status")]
         public ReservationStatus Status { get; set; }
 
+        [Column("image_url")]
+        public string? ImageUrl { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

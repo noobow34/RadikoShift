@@ -37,6 +37,7 @@ namespace RadikoShift.Controllers
                 StationName = sta!.Name,
                 ProgramName = prg!.Title,
                 CastName = prg!.CastName,
+                ImageUrl = prg!.ImageUrl,
 
                 StartTime = TimeOnly.FromDateTime(prg.StartTime!.Value),
                 EndTime = TimeOnly.FromDateTime(prg.EndTime!.Value),

@@ -109,6 +109,7 @@ namespace RadikoShift.Radio
                         CastName = prog.Element("pfm")?.Value.Trim(),
                         Description = prog.Element("info")?.Value.Trim(),
                         StationId = station.Id,
+                        ImageUrl = prog.Element("img")?.Value.Trim(),
                     })
                     .ToList();
 

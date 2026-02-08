@@ -1,4 +1,5 @@
 ﻿using ATL;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 using RadikoShift.EF;
 using System.Diagnostics;
@@ -42,9 +43,24 @@ namespace RadikoShift.Jobs
                         endDateTime = endDateTime.AddDays(1);
                     }
 
+                    //毎日or毎週の場合は今回のProgram情報を取得
+                    string? programName = reservation.ProgramName;
+                    string? castName = reservation.CastName;
+                    string? imageUrl = reservation.ImageUrl;
+                    if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
+                    {
+                        var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstAsync();
+                        if (program != null)
+                        {
+                            programName = program.Title;
+                            castName = program.CastName;
+                            imageUrl = program.ImageUrl;
+                        }
+                    }
+
                     string startTime = startDateTime.ToString("yyyyMMddHHmmss");
                     string endTime = endDateTime.ToString("yyyyMMddHHmmss");
-                    string fileName = $@"0_{baseDate:yyyyMMdd}_{reservation.ProgramName}.m4a";
+                    string fileName = $@"0_{baseDate:yyyyMMdd}_{programName}.m4a";
                     string arg1 = $@"-s {station} -f {startTime} -t {endTime} -o ""{fileName}""";
                     string arg2 = $@"-m ""{radikoMail}"" -p ""{radikoPass}""";
                     ProcessStartInfo recProcessInfo = new()
@@ -67,8 +83,17 @@ namespace RadikoShift.Jobs
                     }
                     //タグ埋め込み
                     Track recorded = new(fileName);
-                    recorded.Title = reservation.ProgramName;
-                    recorded.Artist = $"{reservation.StationName}-{reservation.CastName}";
+                    recorded.Title = programName;
+                    recorded.Artist = $"{reservation.StationName}-{castName}";
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        using (var httpClient = new HttpClient())
+                        {
+                            var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                            var picture = PictureInfo.fromBinaryData(imageBytes, PictureInfo.PIC_TYPE.CD);
+                            recorded.EmbeddedPictures.Add(picture);
+                        }
+                    }
                     recorded.Save();
                     this.JournalWriteLine($"録音ファイルタグ埋め込み");
 
@@ -112,6 +137,14 @@ namespace RadikoShift.Jobs
                 await shiftContext.SaveChangesAsync();
                 this.JournalWriteLine($"ステータス更新");
                 this.JournalWriteLine($"録音完了 予約ID:{reservationId}");
+
+                if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
+                {
+                    reservation.Status = ReservationStatus.Scheduled;
+                    reservation.UpdatedAt = DateTime.Now;
+                    this.JournalWriteLine($"繰り返し予約のためステータスを再度予約中に更新 予約ID:{reservationId}");
+                    await shiftContext.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
