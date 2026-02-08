@@ -41,17 +41,20 @@ namespace RadikoShift.Jobs
                     if (endDateTime <= startDateTime)
                     {
                         endDateTime = endDateTime.AddDays(1);
+                        this.JournalWriteLine($"日付またぎ対応 録音終了日時を翌日に変更: {endDateTime}");
                     }
 
-                    //毎日or毎週の場合は今回のProgram情報を取得
+                    //繰り返し録音の場合は今回のProgram情報を取得
                     string? programName = reservation.ProgramName;
                     string? castName = reservation.CastName;
                     string? imageUrl = reservation.ImageUrl;
                     if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
                     {
+                        this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
                         var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstAsync();
                         if (program != null)
                         {
+                            this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得成功 予約ID:{reservationId}");
                             programName = program.Title;
                             castName = program.CastName;
                             imageUrl = program.ImageUrl;
@@ -87,12 +90,12 @@ namespace RadikoShift.Jobs
                     recorded.Artist = $"{reservation.StationName}-{castName}";
                     if (!string.IsNullOrEmpty(imageUrl))
                     {
-                        using (var httpClient = new HttpClient())
-                        {
-                            var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
-                            var picture = PictureInfo.fromBinaryData(imageBytes, PictureInfo.PIC_TYPE.CD);
-                            recorded.EmbeddedPictures.Add(picture);
-                        }
+                        //画像取得してタグ埋め込み
+                        using var httpClient = new HttpClient();
+                        var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                        var picture = PictureInfo.fromBinaryData(imageBytes, PictureInfo.PIC_TYPE.CD);
+                        recorded.EmbeddedPictures.Add(picture);
+                        this.JournalWriteLine($"録音ファイルタグ埋め込み 画像あり");
                     }
                     recorded.Save();
                     this.JournalWriteLine($"録音ファイルタグ埋め込み");
