@@ -48,6 +48,7 @@ namespace RadikoShift.Jobs
                     string? programName = reservation.ProgramName;
                     string? castName = reservation.CastName;
                     string? imageUrl = reservation.ImageUrl;
+                    string programId = reservation.ProgramId;
                     if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
                     {
                         this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
@@ -55,6 +56,7 @@ namespace RadikoShift.Jobs
                         if (program != null)
                         {
                             this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得成功 予約ID:{reservationId}");
+                            programId = program.Id;
                             programName = program.Title;
                             castName = program.CastName;
                             imageUrl = program.ImageUrl;
@@ -105,11 +107,11 @@ namespace RadikoShift.Jobs
                     var recording = new Recording
                     {
                         ReservationId = reservation.Id,
-                        ProgramId = reservation.ProgramId,
+                        ProgramId = programId,
                         StationId = reservation.StationId,
                         StationName = reservation.StationName,
-                        ProgramName = reservation.ProgramName,
-                        CastName = reservation.CastName,
+                        ProgramName = programName,
+                        CastName = castName,
 
                         StartTime = startDateTime,
                         EndTime = endDateTime,
