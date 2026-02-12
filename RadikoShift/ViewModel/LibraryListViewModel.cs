@@ -1,4 +1,6 @@
-﻿namespace RadikoShift.ViewModel
+﻿using RadikoShift.EF;
+
+namespace RadikoShift.ViewModel
 {
     public class LibraryListViewModel
     {
@@ -10,6 +12,8 @@
         public DateTime EndTime { get; set; }
         public string FileName { get; set; } = null!;
         public long FileSize { get; set; }
+
+        public Reservation? ParentReservation { get; set; } = null;
 
         public string TimeRange =>
             $"{StartTime:yyyy/MM/dd(ddd) HH:mm} - {EndTime:HH:mm}";

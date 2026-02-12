@@ -18,7 +18,7 @@ namespace RadikoShift.Controllers
 
         public async Task<IActionResult> IndexAsync()
         {
-            var list = await _db.Recordings
+            var list = await _db.Recordings.Include(r => r.Reservation)
                         .OrderByDescending(r => r.CreatedAt)
                         .Select(r => new LibraryListViewModel
                         {
@@ -29,7 +29,8 @@ namespace RadikoShift.Controllers
                             StartTime = r.StartTime,
                             EndTime = r.EndTime,
                             FileName = r.FileName,
-                            FileSize = r.FileSize
+                            FileSize = r.FileSize,
+                            ParentReservation = r.Reservation
                         })
                         .ToListAsync();
 

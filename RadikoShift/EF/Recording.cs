@@ -52,5 +52,8 @@ namespace RadikoShift.EF
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
+        [ForeignKey("ReservationId")]
+        public Reservation? Reservation { get; set; } = null;
     }
 }

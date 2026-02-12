@@ -72,3 +72,7 @@ details summary {
         height: 28px;
     }
 }
+
+.accordion .accordion-item + .accordion-item {
+    margin-top: 0.5rem;
+}
