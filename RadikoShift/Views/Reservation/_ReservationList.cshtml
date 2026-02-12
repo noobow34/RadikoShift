@@ -39,30 +39,45 @@
             </table>
         </div>
 
-        <!-- Mobile: Card -->
+        <!-- Mobile: Compact Card -->
         <div class="d-md-none">
             @foreach (var r in Model)
             {
-                <div class="card mb-2 shadow-sm">
-                    <div class="card-body">
-                        <h6 class="card-title">@r.ProgramName</h6>
-                        <div class="small text-muted">@r.StationName</div>
+                <div class="card mb-1 shadow-sm">
+                    <div class="card-body py-2 px-3">
 
-                        <div class="mt-2">
-                            <span class="badge bg-info">@r.RepeatType</span>
-                            <span class="badge bg-secondary">@r.Status</span>
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <!-- 左側：情報 -->
+                            <div class="me-2">
+                                <div class="small fw-semibold">
+                                    @r.ProgramName
+                                </div>
+
+                                <div class="small text-muted">
+                                    @r.StationName
+                                </div>
+
+                                <div class="small text-muted">
+                                    @RenderSchedule(r)
+                                </div>
+
+                                <div class="small mt-1">
+                                    <span class="badge bg-info me-1">@r.RepeatType</span>
+                                    <span class="badge bg-secondary">@r.Status</span>
+                                </div>
+                            </div>
+
+                            <!-- 右側：ボタン -->
+                            <div class="text-nowrap">
+                                <button class="btn btn-sm btn-outline-danger cancel-btn"
+                                        data-id="@r.Id">
+                                    キャンセル
+                                </button>
+                            </div>
+
                         </div>
 
-                        <div class="mt-2 small">
-                            @RenderSchedule(r)
-                        </div>
-
-                        <div class="mt-3 text-end">
-                            <button class="btn btn-sm btn-outline-danger cancel-btn"
-                                    data-id="@r.Id">
-                                キャンセル
-                            </button>
-                        </div>
                     </div>
                 </div>
             }
