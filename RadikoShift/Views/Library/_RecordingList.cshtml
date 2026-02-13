@@ -57,6 +57,7 @@
                             <thead>
                                 <tr>
                                     <th>日付</th>
+                                    <th>番組名</th>
                                     <th>出演</th>
                                     <th>サイズ</th>
                                     <th></th>
@@ -67,16 +68,17 @@
                                 {
                                     <tr data-id="@r.Id">
                                         <td>@r.StartTime.ToString("yyyy/MM/dd(ddd)")</td>
+                                        <td>@r.ProgramName</td>
                                         <td>@r.CastName</td>
                                         <td>@r.FileSizeText</td>
                                         <td class="text-end">
                                             <a class="btn btn-sm btn-primary"
                                                href="@Url.Action("Download", new { id = r.Id })">
-                                                DL
+                                                📥
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger btn-delete"
                                                     data-id="@r.Id">
-                                                削除
+                                                🗑️
                                             </button>
                                         </td>
                                     </tr>
@@ -114,11 +116,11 @@
                     <td class="text-end">
                         <a class="btn btn-sm btn-primary"
                            href="@Url.Action("Download", new { id = r.Id })">
-                            DL
+                            📥
                         </a>
                         <button class="btn btn-sm btn-outline-danger btn-delete"
                                 data-id="@r.Id">
-                            削除
+                            🗑️
                         </button>
                     </td>
                 </tr>
@@ -176,6 +178,9 @@
                                             <div class="small">
                                                 @r.StartTime.ToString("yyyy/MM/dd(ddd)")
                                             </div>
+                                            <div class="small fw-semibold">
+                                                @r.ProgramName
+                                            </div>
                                             <div class="small text-muted">
                                                 @r.FileSizeText
                                             </div>
@@ -185,11 +190,11 @@
                                         <div class="text-nowrap">
                                             <a class="btn btn-sm btn-primary me-1"
                                                href="@Url.Action("Download", new { id = r.Id })">
-                                                DL
+                                                📥
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger btn-delete"
                                                     data-id="@r.Id">
-                                                削除
+                                                🗑️
                                             </button>
                                         </div>
 
@@ -238,11 +243,11 @@
                     <div class="text-nowrap">
                         <a class="btn btn-sm btn-primary me-1"
                            href="@Url.Action("Download", new { id = r.Id })">
-                            DL
+                            📥
                         </a>
                         <button class="btn btn-sm btn-outline-danger btn-delete"
                                 data-id="@r.Id">
-                            削除
+                            🗑️
                         </button>
                     </div>
 

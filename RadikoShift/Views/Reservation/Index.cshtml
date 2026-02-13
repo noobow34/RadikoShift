@@ -92,5 +92,72 @@
             const toast = new bootstrap.Toast(document.getElementById('appToast'));
             toast.show();
         }
+
+        $(document).on("click", ".edit-name-btn", function () {
+            const id = $(this).data("id");
+
+            const row = $(`[data-id='${id}']`).closest("*");
+
+            const label = $(`.program-label[data-id='${id}']`);
+            const input = $(`.program-edit[data-id='${id}']`);
+            const controls = $(`.edit-controls[data-id='${id}']`);
+            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
+
+            label.addClass("d-none");
+            input.removeClass("d-none").focus();
+            controls.removeClass("d-none");
+            editBtn.addClass("d-none");
+        });
+
+
+        $(document).on("click", ".cancel-edit-btn", function () {
+            const id = $(this).data("id");
+
+            const label = $(`.program-label[data-id='${id}']`);
+            const input = $(`.program-edit[data-id='${id}']`);
+            const controls = $(`.edit-controls[data-id='${id}']`);
+            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
+
+            input.val(label.text().trim());
+
+            label.removeClass("d-none");
+            input.addClass("d-none");
+            controls.addClass("d-none");
+            editBtn.removeClass("d-none");
+        });
+
+
+        $(document).on("click", ".save-name-btn", function () {
+            const id = $(this).data("id");
+
+            const label = $(`.program-label[data-id='${id}']`);
+            const input = $(`.program-edit[data-id='${id}']`);
+            const controls = $(`.edit-controls[data-id='${id}']`);
+            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
+
+            const newName = input.val().trim();
+            if (!newName) return;
+
+            $.ajax({
+                url: "/Reservation/UpdateProgramName",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    id: id,
+                    programName: newName
+                }),
+                success: function () {
+                    label.text(newName);
+
+                    label.removeClass("d-none");
+                    input.addClass("d-none");
+                    controls.addClass("d-none");
+                    editBtn.removeClass("d-none");
+                },
+                error: function () {
+                    alert("保存に失敗しました");
+                }
+            });
+        });
     </script>
 }

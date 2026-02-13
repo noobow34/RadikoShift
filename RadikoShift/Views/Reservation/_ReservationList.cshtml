@@ -20,7 +20,24 @@
                     @foreach (var r in Model)
                     {
                         <tr>
-                            <td>@r.ProgramName</td>
+                            <td>
+                                <span class="program-label" data-id="@r.Id">
+                                    @r.ProgramName
+                                </span>
+                                <input class="form-control form-control-sm program-edit d-none"
+                                        data-id="@r.Id"
+                                        value="@r.ProgramName" />
+
+                                <div class="btn-group btn-group-sm ms-1 edit-controls d-none" data-id="@r.Id">
+                                    <button class="btn btn-outline-primary save-name-btn" data-id="@r.Id">保存</button>
+                                    <button class="btn btn-outline-secondary cancel-edit-btn" data-id="@r.Id">取消</button>
+                                </div>
+
+                                <button class="btn btn-sm btn-outline-secondary edit-name-btn ms-1"
+                                        data-id="@r.Id">
+                                    ✏
+                                </button>
+                            </td>
                             <td>@r.StationName</td>
                             <td>@r.RepeatType</td>
                             <td>@RenderSchedule(r)</td>
@@ -30,7 +47,7 @@
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-danger cancel-btn"
                                         data-id="@r.Id">
-                                    キャンセル
+                                    ✖
                                 </button>
                             </td>
                         </tr>
@@ -49,12 +66,26 @@
                         <div class="d-flex align-items-center justify-content-between">
 
                             <!-- 左側：情報 -->
-                            <div class="me-2">
+                            <div class="me-2 w-100">
+
+                                <!-- 番組名 -->
                                 <div class="small fw-semibold">
-                                    @r.ProgramName
+                                    <span class="program-label" data-id="@r.Id">
+                                        @r.ProgramName
+                                    </span>
                                 </div>
 
-                                <div class="small text-muted">
+                                <!-- 編集UI（入力 + 保存取消） -->
+                                <input class="form-control form-control-sm program-edit d-none mt-1"
+                                       data-id="@r.Id"
+                                       value="@r.ProgramName" />
+
+                                <div class="btn-group btn-group-sm mt-1 edit-controls d-none" data-id="@r.Id">
+                                    <button class="btn btn-outline-primary save-name-btn" data-id="@r.Id">保存</button>
+                                    <button class="btn btn-outline-secondary cancel-edit-btn" data-id="@r.Id">取消</button>
+                                </div>
+
+                                <div class="small text-muted mt-1">
                                     @r.StationName
                                 </div>
 
@@ -68,12 +99,19 @@
                                 </div>
                             </div>
 
-                            <!-- 右側：ボタン -->
-                            <div class="text-nowrap">
+                            <!-- 右側：操作ボタン群 -->
+                            <div class="text-nowrap ms-2">
+
+                                <button class="btn btn-sm btn-outline-secondary edit-name-btn me-1"
+                                        data-id="@r.Id">
+                                    ✏
+                                </button>
+
                                 <button class="btn btn-sm btn-outline-danger cancel-btn"
                                         data-id="@r.Id">
                                     キャンセル
                                 </button>
+
                             </div>
 
                         </div>
@@ -82,7 +120,6 @@
                 </div>
             }
         </div>
-    </div>
 </div>
 
 @functions {

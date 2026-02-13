@@ -89,5 +89,17 @@ namespace RadikoShift.Controllers
 
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateProgramName([FromBody] UpdateProgramNameRequest req)
+        {
+            var r = await _db.Reservations.FindAsync(req.Id);
+            if (r == null) return NotFound();
+
+            r.ProgramName = req.ProgramName;
+            await _db.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }
