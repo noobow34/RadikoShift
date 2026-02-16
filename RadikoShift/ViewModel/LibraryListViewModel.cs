@@ -19,6 +19,6 @@ namespace RadikoShift.ViewModel
             $"{StartTime:yyyy/MM/dd(ddd) HH:mm} - {EndTime:HH:mm}";
 
         public string FileSizeText =>
-            $"{FileSize / 1024 / 1024} MB";
+            $"{FileSize / 1024 / 1024.0:F2} MB";
     }
 }

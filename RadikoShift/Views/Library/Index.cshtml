@@ -2,7 +2,18 @@
 @model IEnumerable<LibraryListViewModel>
 
 <div class="container">
-    <h3 class="mb-3">🎧 録音ライブラリ</h3>
+    @{
+        long fileSize = Model.Sum(r => r.FileSize);
+        string formattedSize = fileSize < 1024 * 1024 * 1024
+        ? $"{fileSize / (1024.0 * 1024):F2} MB"
+        : $"{fileSize / (1024.0 * 1024 * 1024):F2} GB";
+    }
+
+    <h3 class="mb-1">🎧 録音ライブラリ</h3>
+
+    <div class="text-muted mb-3">
+        総サイズ：<span class="fw-semibold">@formattedSize</span>
+    </div>
 
     <div id="recording-list">
         @await Html.PartialAsync("_RecordingList", Model)
