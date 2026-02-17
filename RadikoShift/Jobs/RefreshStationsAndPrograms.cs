@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Microsoft.EntityFrameworkCore;
+using Quartz;
 using RadikoShift.EF;
 using RadikoShift.Radio;
 
@@ -25,11 +26,12 @@ namespace RadikoShift.Jobs
                     station.AreaName = value;
                 }
             }
-            var existStations =  sContext.Stations;
-            sContext.RemoveRange(existStations);
+            var tran = sContext.Database.BeginTransaction();
+            this.JournalWriteLine("stations全件削除");
+            sContext.Database.ExecuteSqlRaw("DELETE FROM stations");
+            this.JournalWriteLine("programs全件削除");
+            sContext.Database.ExecuteSqlRaw("DELETE FROM programs");
             sContext.Stations.AddRange(stations);
-            var existPrograms = sContext.Programs;
-            sContext.RemoveRange(existPrograms);
             foreach (var station in stations)
             {
                 this.JournalWriteLine(station.Name!);
@@ -38,6 +40,7 @@ namespace RadikoShift.Jobs
             }
             this.JournalWriteLine("保存");
             sContext.SaveChanges();
+            tran.Commit();
             this.JournalWriteLine("番組表更新終了");
 
             return Task.CompletedTask;
