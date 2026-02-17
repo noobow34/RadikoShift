@@ -25,15 +25,15 @@ namespace RadikoShift.Jobs
                     station.AreaName = value;
                 }
             }
-            var existStations =  sContext.Stations.Where(s => (stations.Select(s => s.Id).ToArray().Contains(s.Id)));
+            var existStations =  sContext.Stations;
             sContext.RemoveRange(existStations);
             sContext.Stations.AddRange(stations);
+            var existPrograms = sContext.Programs;
+            sContext.RemoveRange(existPrograms);
             foreach (var station in stations)
             {
                 this.JournalWriteLine(station.Name!);
                 var programs = Radiko.GetPrograms(station).Result;
-                var existPrograms = sContext.Programs.Where(p => (programs.Select(p => p.Id).ToArray().Contains(p.Id)));
-                sContext.RemoveRange(existPrograms);
                 sContext.Programs.AddRange(programs);
             }
             this.JournalWriteLine("保存");
