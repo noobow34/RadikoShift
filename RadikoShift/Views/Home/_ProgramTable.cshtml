@@ -21,6 +21,9 @@ else
                 <button class="btn btn-sm btn-outline-primary reserve-btn"
                         data-program-id="@p.ProgramId"
                         data-title="@p.Title"
+                        data-cast="@p.CastName"
+                        data-starttime="@p.StartTime"
+                        data-endtime="@p.EndTime"
                         data-time="@p.TimeRange">
                     予約
                 </button>
@@ -41,69 +44,100 @@ else
                 </details>
             }
         </div>
-        <div class="modal fade" id="reserveModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
+    }
+    <div class="modal fade" id="reserveModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">録音予約</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title">録音予約</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-2 row align-items-center">
+                        <label class="col-3 col-form-label">タイトル</label>
+                        <div class="col-9">
+                            <input class="form-control form-control-sm" id="modalTitle">
+                        </div>
                     </div>
 
-                    <div class="modal-body">
+                    <div class="mb-2 row align-items-center">
+                        <label class="col-3 col-form-label">時間</label>
+                        <div class="col-9 d-flex align-items-center gap-2">
+                            <input type="time"
+                                   class="form-control form-control-sm"
+                                   id="modalStartTime"
+                                   style="max-width:120px">
 
-                        <div class="mb-2">
-                            <div class="fw-bold" id="modalTitle"></div>
-                            <small class="text-muted" id="modalTime"></small>
+                            <span>～</span>
+
+                            <input type="time"
+                                   class="form-control form-control-sm"
+                                   id="modalEndTime"
+                                   style="max-width:120px">
                         </div>
+                    </div>
 
-                        <hr>
+                    <div class="mb-2 row align-items-center">
+                        <label class="col-3 col-form-label">Cast</label>
+                        <div class="col-9">
+                            <input class="form-control form-control-sm" id="modalCast">
+                        </div>
+                    </div>
 
-                        <div class="form-check">
+                    <hr>
+
+                    <div class="d-flex align-items-center gap-3 mb-2">
+
+                        <div class="form-check form-check-inline mb-0">
                             <input class="form-check-input repeat-option"
                                    type="checkbox"
                                    value="once"
                                    id="repeatOnce"
                                    checked>
-                            <label class="form-check-label" for="repeatOnce">
+                            <label class="form-check-label small" for="repeatOnce">
                                 今回のみ
                             </label>
                         </div>
 
-                        <div class="form-check">
+                        <div class="form-check form-check-inline mb-0">
                             <input class="form-check-input repeat-option"
                                    type="checkbox"
                                    value="weekly"
                                    id="repeatWeekly">
-                            <label class="form-check-label" for="repeatWeekly">
-                                毎週この時間に予約
+                            <label class="form-check-label small" for="repeatWeekly">
+                                毎週
                             </label>
                         </div>
 
-                        <div class="form-check">
+                        <div class="form-check form-check-inline mb-0">
                             <input class="form-check-input repeat-option"
                                    type="checkbox"
                                    value="daily"
                                    id="repeatDaily">
-                            <label class="form-check-label" for="repeatDaily">
-                                毎日この時間に予約
+                            <label class="form-check-label small" for="repeatDaily">
+                                毎日
                             </label>
                         </div>
 
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary"
-                                data-bs-dismiss="modal">
-                            キャンセル
-                        </button>
-                        <button class="btn btn-primary" id="confirmReserve">
-                            予約する
-                        </button>
-                    </div>
-
+                    <hidden id="modalProgramId" value="" />
                 </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        キャンセル
+                    </button>
+                    <button class="btn btn-primary" id="confirmReserve">
+                        予約する
+                    </button>
+                </div>
+
             </div>
         </div>
-    }
+    </div>
 }

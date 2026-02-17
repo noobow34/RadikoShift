@@ -154,27 +154,50 @@
         });
 
         $(document).on('click', '#confirmReserve', function () {
-            const repeatType = $('.repeat-option:checked').val();
+
+            const repeatType = $('.repeat-option:checked').val()
 
             const payload = {
-                programId: selectedProgram.programId,
-                repeatType: repeatType
-            };
+                programId: $('#modalProgramId').val(),
+                title: $('#modalTitle').val(),
+                castName: $('#modalCast').val(),
+                startTime: $('#modalStartTime').val(),
+                endTime: $('#modalEndTime').val(),
+                repeatType: repeatType,
+                isEdited: $('#isEdited').val() === 'true'
+            }
 
             $.post('/Reservation/Create', payload)
                 .done(() => {
-                    const toastEl = document.getElementById('reserveToast');
-                    const toast = new bootstrap.Toast(toastEl, {
-                        delay: 2000   // 2秒で自動消滅
-                    });
-                    toast.show();
 
-                    bootstrap.Modal.getInstance(
+                    const toastEl = document.getElementById('reserveToast')
+                    const toast = new bootstrap.Toast(toastEl, { delay: 2000 })
+                    toast.show()
+
+                    const modal = bootstrap.Modal.getInstance(
                         document.getElementById('reserveModal')
-                    ).hide();
+                    )
+                    modal.hide()
                 })
-                .fail(() => alert('予約に失敗しました'));
-        });
+                .fail(() => alert('予約に失敗しました'))
+        })
+
+        $(document).on('click', '.reserve-btn', function () {
+            const $btn = $(this)
+
+            const timeRange = ($btn.data('time') || "")
+            const parts = timeRange.split('–').map(x => x.trim())
+
+            $('#modalStartTime').val(parts[0] || "")
+            $('#modalEndTime').val(parts[1] || "")
+            $('#modalTitle').val($btn.data('title') || "")
+            $('#modalCast').val($btn.data('cast') || "")
+            $('#modalProgramId').val($btn.data('program-id') || "")
+
+            const modalEl = document.getElementById('reserveModal')
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+            modal.show()
+        })
 
     </script>
 }
