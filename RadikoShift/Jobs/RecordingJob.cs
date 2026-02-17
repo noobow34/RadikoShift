@@ -49,7 +49,7 @@ namespace RadikoShift.Jobs
                     string? castName = reservation.CastName;
                     string? imageUrl = reservation.ImageUrl;
                     string programId = reservation.ProgramId;
-                    if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
+                    if ((reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily) && reservation.IsManual!.Value)
                     {
                         this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
                         var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstAsync();

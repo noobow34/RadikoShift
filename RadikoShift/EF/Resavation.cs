@@ -59,6 +59,9 @@ namespace RadikoShift.EF
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
+        [Column("is_manual")]
+        public bool? IsManual { get; set; } = false;
+
         public override string ToString()
         {
             var timeRange = $"{StartTime:HH:mm}-{EndTime:HH:mm}";
