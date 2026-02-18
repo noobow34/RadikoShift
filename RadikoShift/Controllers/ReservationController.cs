@@ -35,12 +35,12 @@ namespace RadikoShift.Controllers
                 ProgramId = req.ProgramId,
                 StationId = prg!.StationId!,
                 StationName = sta!.Name,
-                ProgramName = prg!.Title,
-                CastName = prg!.CastName,
+                ProgramName = req.IsEdited ? req.Title : prg!.Title,
+                CastName = req.IsEdited ? req.CastName : prg!.CastName,
                 ImageUrl = prg!.ImageUrl,
 
-                StartTime = TimeOnly.FromDateTime(prg.StartTime!.Value),
-                EndTime = TimeOnly.FromDateTime(prg.EndTime!.Value),
+                StartTime = req.IsEdited ? req.StartTime : TimeOnly.FromDateTime(prg.StartTime!.Value),
+                EndTime = req.IsEdited ? req.EndTime : TimeOnly.FromDateTime(prg.EndTime!.Value),
 
                 TargetDate = req.RepeatType == RepeatType.Once
                             ? DateOnly.FromDateTime(prg.StartTime!.Value)
@@ -51,7 +51,9 @@ namespace RadikoShift.Controllers
 
                 Status = ReservationStatus.Scheduled,
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                UpdatedAt = DateTime.Now,
+
+                IsManual = req.IsEdited
             };
 
             _db.Reservations.Add(reservation);

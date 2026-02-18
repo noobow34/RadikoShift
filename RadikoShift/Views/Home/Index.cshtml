@@ -164,7 +164,7 @@
                 startTime: $('#modalStartTime').val(),
                 endTime: $('#modalEndTime').val(),
                 repeatType: repeatType,
-                isEdited: $('#isEdited').val() === 'true'
+                isEdited: $('#isEditedCheckbox').is(':checked')
             }
 
             $.post('/Reservation/Create', payload)
