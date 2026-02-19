@@ -9,6 +9,7 @@
                 <thead>
                     <tr>
                         <th>番組</th>
+                        <th>出演</th>
                         <th>局</th>
                         <th>種別</th>
                         <th>スケジュール</th>
@@ -38,6 +39,7 @@
                                     ✏️
                                 </button>
                             </td>
+                            <td>@r.CastName</td>
                             <td>@r.StationName</td>
                             <td>@r.RepeatType</td>
                             <td>@RenderSchedule(r)</td>
@@ -86,7 +88,7 @@
                                 </div>
 
                                 <div class="small text-muted mt-1">
-                                    @r.StationName
+                                    @r.CastName / @r.StationName
                                 </div>
 
                                 <div class="small text-muted">
@@ -120,6 +122,7 @@
                 </div>
             }
         </div>
+</div>
 </div>
 
 @functions {
