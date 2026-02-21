@@ -12,12 +12,14 @@ else
     foreach (var p in Model)
     {
         <div class="program-item @(p.IsNow ? "now" : "")">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-center">
                 <strong>@p.TimeRange</strong>
+
                 @if (p.IsNow)
                 {
                     <span class="badge bg-danger">ON AIR</span>
                 }
+
                 <button class="btn btn-sm btn-outline-primary reserve-btn"
                         data-program-id="@p.ProgramId"
                         data-title="@p.Title"
