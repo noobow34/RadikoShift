@@ -18,7 +18,7 @@ namespace RadikoShift.Controllers
 
         public IActionResult Index()
         {
-            var reagions = _db.Stations
+            var reagions = _db.Stations.Where(s => s.RegionId != "zenkoku")
                 .GroupBy(s => new { s.RegionId, s.RegionName })
                 .Select(g => new IdNamePair() { Id = g.Key.RegionId,Name = g.Key.RegionName,DisplayOrder = g.Min(x => x.DisplayOrder) ?? 0})
                 .OrderBy(r => r.DisplayOrder)
@@ -31,25 +31,15 @@ namespace RadikoShift.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAreas(string region)
+        public IActionResult GetStations(string region)
         {
-            var areas = _db.Stations.Where(s => s.RegionId == region)
-                .GroupBy(s => new { s.Area, s.AreaName })
-                .Select(g => new IdNamePair() { Id = g.Key.Area, Name = g.Key.AreaName, DisplayOrder = g.Min(x => x.DisplayOrder) ?? 0 })
-                .OrderBy(r => r.DisplayOrder)
+            var stations = _db.Stations.Where(s => s.RegionId == region)
+                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0})
+                .OrderBy(o => o.DisplayOrder)
                 .ToList();
 
-            return Json(areas);
-        }
-
-        [HttpGet]
-        public IActionResult GetStations(string area)
-        {
-            var stations = _db.Stations.Where(s => s.Area == area)
-                .GroupBy(s => new { s.Id, s.Name })
-                .Select(g => new IdNamePair() { Id = g.Key.Id, Name = g.Key.Name, DisplayOrder = g.Min(x => x.DisplayOrder) ?? 0 })
-                .OrderBy(r => r.DisplayOrder)
-                .ToList();
+            stations.AddRange(_db.Stations.Where(s => s.RegionId == "zenkoku")
+                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0}).ToList());
 
             return Json(stations);
         }

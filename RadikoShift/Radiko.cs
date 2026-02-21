@@ -60,7 +60,7 @@ namespace RadikoShift.Radio
                 var doc = XDocument.Load(xmlUrl);
 
                 // 放送局一覧
-                var sequence = 1;
+                int stationOrder = 1;
                 foreach (var stations in doc.Descendants("stations"))
                 {
                     var regionId = stations.Attribute("region_id")?.Value ?? "";
@@ -69,9 +69,7 @@ namespace RadikoShift.Radio
                     {
                         var code = station.Descendants("id").First().Value;
                         var name = station.Descendants("name").First().Value;
-                        var logo = station.Descendants("logo").FirstOrDefault()?.Value ?? "";
                         var areaId = station.Descendants("area_id").FirstOrDefault()?.Value ?? "";
-                        var url = station.Descendants("href").First().Value;
                         res.Add(new Station
                         {
                             Id = code,
@@ -79,12 +77,23 @@ namespace RadikoShift.Radio
                             RegionName = regionName,
                             Name = name,
                             Area = areaId,
-                            DisplayOrder = sequence++
+                            DisplayOrder = stationOrder++
                         });
                     }
                 }
 
-                return res;
+                var sorted = res
+                    .GroupBy(s => s.Area)
+                    .OrderBy(g => g.Min(x => x.DisplayOrder))
+                    .SelectMany(g => g.OrderBy(x => x.DisplayOrder))
+                    .ToList();
+
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    sorted[i].DisplayOrder = i + 1;
+                }
+
+                return sorted;
             });
         }
 

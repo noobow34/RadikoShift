@@ -7,7 +7,7 @@
     <!-- フィルタ -->
     <div class="row g-2 mb-3">
         <!-- 地区 -->
-        <div class="col-12 col-md-3">
+        <div class="col-4 col-md-3">
             <select id="region" class="form-select">
                 <option value="">地区</option>
                 @foreach (var s in Model.Reagions)
@@ -17,19 +17,8 @@
             </select>
         </div>
 
-        <!-- 都道府県 -->
-        <div class="col-6 col-md-3">
-            <select id="area" class="form-select" disabled>
-                <option value="">都道府県</option>
-                @foreach (var s in Model.Areas)
-                {
-                    <option value="@s.Id">@s.Name</option>
-                }
-            </select>
-        </div>
-
         <!-- 局 -->
-        <div class="col-6 col-md-3">
+        <div class="col-4 col-md-3">
             <select id="station" class="form-select" disabled>
                 <option value="">放送局</option>
                 @foreach (var s in Model.Stations)
@@ -40,7 +29,7 @@
         </div>
 
         <!-- 日付 -->
-        <div class="col-12 col-md-3">
+        <div class="col-4 col-md-3">
             <input id="date"
                    type="date"
                    class="form-control"
@@ -77,35 +66,13 @@
         $('#region').on('change', function () {
             const region = $(this).val();
 
-            $('#area').prop('disabled', true).empty()
-                .append('<option value="">都道府県</option>');
             $('#station').prop('disabled', true).empty()
                 .append('<option value="">放送局</option>');
             $('#program-table').empty();
 
             if (!region) return;
 
-            $.getJSON('/Home/GetAreas', { region: region })
-                .done(function (data) {
-                    $.each(data, function (index,data) {
-                        $('#area').append(
-                            $('<option>').val(data.id).text(data.name)
-                        );
-                    });
-                    $('#area').prop('disabled', false);
-                });
-        });
-
-        $('#area').on('change', function () {
-            const area = $(this).val();
-
-            $('#station').prop('disabled', true).empty()
-                .append('<option value="">放送局</option>');
-            $('#program-table').empty();
-
-            if (!area) return;
-
-            $.getJSON('/Home/GetStations', { area: area })
+            $.getJSON('/Home/GetStations', { region: region })
                 .done(function (data) {
                     $.each(data, function (_, s) {
                         $('#station').append(
