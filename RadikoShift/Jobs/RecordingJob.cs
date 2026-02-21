@@ -153,7 +153,7 @@ namespace RadikoShift.Jobs
             }
             catch (Exception ex)
             {
-                this.JournalWriteLine($"録音ジョブ実行中に例外が発生: {ex.Message}");
+                this.JournalWriteLine($"録音ジョブ実行中に例外が発生: {ex.StackTrace}");
             }
         }
     }
