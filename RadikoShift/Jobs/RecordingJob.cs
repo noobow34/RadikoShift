@@ -52,7 +52,7 @@ namespace RadikoShift.Jobs
                     if ((reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily) && reservation.IsManual!.Value)
                     {
                         this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
-                        var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstAsync();
+                        var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstOrDefaultAsync();
                         if (program != null)
                         {
                             this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得成功 予約ID:{reservationId}");
