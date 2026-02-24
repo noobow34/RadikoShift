@@ -1,13 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql.Bulk;
 using Quartz;
 using RadikoShift.EF;
 using RadikoShift.Radio;
+using System.Collections.Concurrent;
 
 namespace RadikoShift.Jobs
 {
     public class RefreshStationsAndPrograms : IJob
     {
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
             try
             {
@@ -18,39 +20,58 @@ namespace RadikoShift.Jobs
                 Radiko.Login(radikoMail, radikoPass).Wait();
 
                 this.JournalWriteLine("放送局取得");
-                var stations = Radiko.GetStations(true).Result;
+                var stations = await Radiko.GetStations(true);
                 ShiftContext sContext = new();
-                var areas = sContext.Areas.ToDictionary(a => a.AreaCode, a => a.AreaName);
-                foreach (var station in stations)
-                {
-                    if (areas.TryGetValue(station.Area!, out string? value))
-                    {
-                        station.AreaName = value;
-                    }
-                }
-                var tran = sContext.Database.BeginTransaction();
                 this.JournalWriteLine("stations全件削除");
-                sContext.Database.ExecuteSqlRaw("DELETE FROM stations");
+                await sContext.Stations.ExecuteDeleteAsync();
                 this.JournalWriteLine("programs全件削除");
-                sContext.Database.ExecuteSqlRaw("DELETE FROM programs");
-                sContext.Stations.AddRange(stations);
-                foreach (var station in stations)
+                await sContext.Programs.ExecuteDeleteAsync();
+                
+                const int PartitionCount = 10;
+                var stationPartitions = Partitioner
+                    .Create(stations, EnumerablePartitionerOptions.NoBuffering)
+                    .GetPartitions(PartitionCount);
+
+                List<Task> tasks = [];
+                List<EF.Program> programs = [];
+
+                foreach (var partition in stationPartitions)
                 {
-                    this.JournalWriteLine(station.Name!);
-                    var programs = Radiko.GetPrograms(station).Result;
-                    sContext.Programs.AddRange(programs);
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        var localPrograms = new List<EF.Program>();
+
+                        using (partition)
+                        {
+                            while (partition.MoveNext())
+                            {
+                                var station = partition.Current;
+
+                                this.JournalWriteLine(station.Name!);
+
+                                var programs = await Radiko.GetPrograms(station);
+                                localPrograms.AddRange(programs);
+                            }
+                        }
+
+                        lock (programs)
+                        {
+                            programs.AddRange(localPrograms);
+                        }
+                    }));
                 }
+
+                await Task.WhenAll(tasks);
                 this.JournalWriteLine("保存");
-                sContext.SaveChanges();
-                tran.Commit();
+                var uploader = new NpgsqlBulkUploader(sContext);
+                uploader.Insert(stations);
+                uploader.Insert(programs);
                 this.JournalWriteLine("番組表更新終了");
             }
             catch (Exception ex)
             {
                 this.JournalWriteLine($"放送局・番組表更新ジョブ実行中に例外が発生:{ex.ToString}");
             }
-
-            return Task.CompletedTask;
         }
     }
 }

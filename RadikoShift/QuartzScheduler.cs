@@ -104,7 +104,7 @@ namespace RadikoShift
 
         public async Task UnregisterAsync(Reservation reservation)
         {
-            if (_scheduler.CheckExists(new JobKey($"reservation-{reservation.Id}")).Result)
+            if (await _scheduler.CheckExists(new JobKey($"reservation-{reservation.Id}")))
             {
                 this.JournalWriteLine($"予約をSchedulerから削除します：{reservation}");
                 await _scheduler.DeleteJob(new JobKey($"reservation-{reservation.Id}"));

@@ -39,62 +39,71 @@ namespace RadikoShift.Radio
         /// 放送局取得
         /// </summary>
         /// <returns></returns>
-        public static Task<List<Station>> GetStations(bool login)
+        public static async Task<List<Station>> GetStations(bool login)
         {
-            return Task.Factory.StartNew(() =>
+            var xmlUrl = Define.Radiko.StationListFull;
+
+            if (!login)
             {
-                var xmlUrl = Define.Radiko.StationListFull;
-                if (!login)
+                using var client = new HttpClient();
+
+                var text = await client.GetStringAsync(Define.Radiko.AreaCheck)
+                                       .ConfigureAwait(false);
+
+                var m = Regex.Match(text, @"JP[0-9]+");
+                if (m.Success)
                 {
-                    // 地域判定をする
-                    using var client = new HttpClient();
-                    var text = client.GetStringAsync(Define.Radiko.AreaCheck).Result;
-                    var m = Regex.Match(text, @"JP[0-9]+");
-                    if (m.Success)
+                    xmlUrl = Define.Radiko.StationListPref.Replace("[AREA]", m.Value);
+                }
+            }
+
+            var res = new List<Station>();
+
+            // 非同期でXML読み込み
+            using var stream = await new HttpClient()
+                .GetStreamAsync(xmlUrl)
+                .ConfigureAwait(false);
+
+            var doc = await XDocument.LoadAsync(stream, LoadOptions.None, CancellationToken.None)
+                                     .ConfigureAwait(false);
+
+            int stationOrder = 1;
+
+            foreach (var stations in doc.Descendants("stations"))
+            {
+                var regionId = stations.Attribute("region_id")?.Value ?? "";
+                var regionName = stations.Attribute("region_name")?.Value ?? "";
+
+                foreach (var station in stations.Descendants("station"))
+                {
+                    var code = station.Descendants("id").First().Value;
+                    var name = station.Descendants("name").First().Value;
+                    var areaId = station.Descendants("area_id").FirstOrDefault()?.Value ?? "";
+
+                    res.Add(new Station
                     {
-                        xmlUrl = Define.Radiko.StationListPref.Replace("[AREA]", m.Value);
-                    }
+                        Id = code,
+                        RegionId = regionId,
+                        RegionName = regionName,
+                        Name = name,
+                        Area = areaId,
+                        DisplayOrder = stationOrder++
+                    });
                 }
-                
-                var res = new List<Station>();
-                var doc = XDocument.Load(xmlUrl);
+            }
 
-                // 放送局一覧
-                int stationOrder = 1;
-                foreach (var stations in doc.Descendants("stations"))
-                {
-                    var regionId = stations.Attribute("region_id")?.Value ?? "";
-                    var regionName = stations.Attribute("region_name")?.Value ?? "";
-                    foreach (var station in stations.Descendants("station"))
-                    {
-                        var code = station.Descendants("id").First().Value;
-                        var name = station.Descendants("name").First().Value;
-                        var areaId = station.Descendants("area_id").FirstOrDefault()?.Value ?? "";
-                        res.Add(new Station
-                        {
-                            Id = code,
-                            RegionId = regionId,
-                            RegionName = regionName,
-                            Name = name,
-                            Area = areaId,
-                            DisplayOrder = stationOrder++
-                        });
-                    }
-                }
+            var sorted = res
+                .GroupBy(s => s.Area)
+                .OrderBy(g => g.Min(x => x.DisplayOrder))
+                .SelectMany(g => g.OrderBy(x => x.DisplayOrder))
+                .ToList();
 
-                var sorted = res
-                    .GroupBy(s => s.Area)
-                    .OrderBy(g => g.Min(x => x.DisplayOrder))
-                    .SelectMany(g => g.OrderBy(x => x.DisplayOrder))
-                    .ToList();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                sorted[i].DisplayOrder = i + 1;
+            }
 
-                for (int i = 0; i < sorted.Count; i++)
-                {
-                    sorted[i].DisplayOrder = i + 1;
-                }
-
-                return sorted;
-            });
+            return sorted;
         }
 
         /// <summary>
