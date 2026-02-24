@@ -7,6 +7,10 @@ namespace RadikoShift.EF;
 public partial class Program
 {
     [Key]
+    [Column("p_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int PId { get; set; }
+
     [Column("id")]
     public string Id { get; set; } = null!;
 

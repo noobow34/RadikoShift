@@ -25,11 +25,6 @@ public partial class ShiftContext : DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Program>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("programs_pkey");
-        });
-
         modelBuilder.Entity<Station>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("stations_pkey");
