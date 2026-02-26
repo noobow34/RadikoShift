@@ -17,7 +17,7 @@ public partial class Station
     public string? RegionName { get; set; }
 
     [Column("area")]
-    public string? Area { get; set; }
+    public string? AreaCode { get; set; }
 
     [Column("name")]
     public string? Name { get; set; }
@@ -25,6 +25,6 @@ public partial class Station
     [Column("display_order")]
     public int? DisplayOrder { get; set; }
 
-    [Column("area_name")]
-    public string? AreaName { get; set; }
+    [ForeignKey("AreaCode")]
+    public Area? Area { get; set; }
 }

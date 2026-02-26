@@ -2,7 +2,7 @@
 {
     public class CreateReservationRequest
     {
-        public string ProgramId { get; set; } = null!;
+        public long ProgramId { get; set; }
 
         public string Title { get; set; } = null!;
 

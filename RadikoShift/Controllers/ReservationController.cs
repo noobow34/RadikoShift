@@ -32,7 +32,7 @@ namespace RadikoShift.Controllers
 
             var reservation = new Reservation
             {
-                ProgramId = req.ProgramId,
+                ProgramId = prg!.Id,
                 StationId = prg!.StationId!,
                 StationName = sta!.Name,
                 ProgramName = req.IsEdited ? req.Title : prg!.Title,

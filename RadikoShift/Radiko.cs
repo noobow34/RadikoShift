@@ -86,7 +86,7 @@ namespace RadikoShift.Radio
                         RegionId = regionId,
                         RegionName = regionName,
                         Name = name,
-                        Area = areaId,
+                        AreaCode = areaId,
                         DisplayOrder = stationOrder++
                     });
                 }

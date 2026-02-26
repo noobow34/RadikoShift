@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RadikoShift.EF;
 using RadikoShift.Models;
 using RadikoShift.ViewModel;
@@ -33,13 +34,13 @@ namespace RadikoShift.Controllers
         [HttpGet]
         public IActionResult GetStations(string region)
         {
-            var stations = _db.Stations.Where(s => s.RegionId == region)
-                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0})
+            var stations = _db.Stations.Where(s => s.RegionId == region).Include(s => s.Area)
+                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.Area!.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0})
                 .OrderBy(o => o.DisplayOrder)
                 .ToList();
 
-            stations.AddRange(_db.Stations.Where(s => s.RegionId == "zenkoku")
-                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0}).ToList());
+            stations.AddRange(_db.Stations.Where(s => s.RegionId == "zenkoku").Include(s => s.Area)
+                .Select(g => new IdNamePair() { Id = g.Id, Name = $"{g.Area!.AreaName}-{g.Name}", DisplayOrder = g.DisplayOrder ?? 0}).ToList());
 
             return Json(stations);
         }
@@ -57,7 +58,7 @@ namespace RadikoShift.Controllers
                 .OrderBy(p => p.StartTime)
                 .Select(p => new ProgramItemViewModel
                 {
-                    ProgramId = p.Id,
+                    ProgramId = p.PId,
                     StartTime = p.StartTime!.Value,
                     EndTime = p.EndTime!.Value,
                     Title = p.Title ?? "",
