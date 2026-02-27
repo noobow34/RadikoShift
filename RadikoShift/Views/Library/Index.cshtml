@@ -11,12 +11,14 @@
 
     <h3 class="mb-1">🎧 録音ライブラリ</h3>
 
-    <div class="text-muted mb-3">
-        総サイズ：<span class="fw-semibold">@formattedSize</span>
-    </div>
+    <div id="library-container">
+        <div class="text-muted mb-3">
+            総サイズ：<span class="fw-semibold">@formattedSize</span>
+        </div>
 
-    <div id="recording-list">
-        @await Html.PartialAsync("_RecordingList", Model)
+        <div id="recording-list">
+            @await Html.PartialAsync("_RecordingList", Model)
+        </div>
     </div>
 </div>
 
@@ -85,7 +87,7 @@
             });
 
             function reloadList() {
-                $('#recording-list').load('/Library/Index #recording-list > *');
+                $('#library-container').load('/Library/Index #library-container > *');
             }
 
             function showToast(message, type) {
