@@ -38,6 +38,65 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="editReservationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">予約編集</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="editReservationId">
+
+                <div class="mb-2 row align-items-center">
+                    <label class="col-3 col-form-label">タイトル</label>
+                    <div class="col-9">
+                        <input class="form-control form-control-sm" id="editTitle">
+                    </div>
+                </div>
+
+                <div class="mb-2 row align-items-center">
+                    <label class="col-3 col-form-label">時間</label>
+                    <div class="col-9 d-flex align-items-center gap-2">
+                        <input type="time" class="form-control form-control-sm"
+                               id="editStartTime" style="max-width:120px">
+                        <span>～</span>
+                        <input type="time" class="form-control form-control-sm"
+                               id="editEndTime" style="max-width:120px">
+                    </div>
+                </div>
+
+                <div class="mb-2 row align-items-center">
+                    <label class="col-3 col-form-label">出演</label>
+                    <div class="col-9">
+                        <input class="form-control form-control-sm" id="editCast">
+                    </div>
+                </div>
+
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="editIsEdited">
+                    <label class="form-check-label small" for="editIsEdited">
+                        手動編集として保存
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                <button class="btn btn-primary" id="saveReservationEdit">
+                    保存
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @functions {
     string RenderSchedule(Reservation r)
     {
@@ -93,71 +152,46 @@
             toast.show();
         }
 
-        $(document).on("click", ".edit-name-btn", function () {
-            const id = $(this).data("id");
+        $(document).on('click', '.edit-reserve-btn', function () {
 
-            const row = $(`[data-id='${id}']`).closest("*");
+            const $btn = $(this)
 
-            const label = $(`.program-label[data-id='${id}']`);
-            const input = $(`.program-edit[data-id='${id}']`);
-            const controls = $(`.edit-controls[data-id='${id}']`);
-            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
+            $('#editReservationId').val($btn.data('id'))
+            $('#editTitle').val($btn.data('title'))
+            $('#editCast').val($btn.data('cast'))
+            $('#editStartTime').val($btn.data('start'))
+            $('#editEndTime').val($btn.data('end'))
+            $('#editIsEdited').prop('checked', $btn.data('edited'))
 
-            label.addClass("d-none");
-            input.removeClass("d-none").focus();
-            controls.removeClass("d-none");
-            editBtn.addClass("d-none");
-        });
-
-
-        $(document).on("click", ".cancel-edit-btn", function () {
-            const id = $(this).data("id");
-
-            const label = $(`.program-label[data-id='${id}']`);
-            const input = $(`.program-edit[data-id='${id}']`);
-            const controls = $(`.edit-controls[data-id='${id}']`);
-            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
-
-            input.val(label.text().trim());
-
-            label.removeClass("d-none");
-            input.addClass("d-none");
-            controls.addClass("d-none");
-            editBtn.removeClass("d-none");
-        });
+            const modal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('editReservationModal')
+            )
+            modal.show()
+        })
 
 
-        $(document).on("click", ".save-name-btn", function () {
-            const id = $(this).data("id");
+        $(document).on('click', '#saveReservationEdit', function () {
 
-            const label = $(`.program-label[data-id='${id}']`);
-            const input = $(`.program-edit[data-id='${id}']`);
-            const controls = $(`.edit-controls[data-id='${id}']`);
-            const editBtn = $(`.edit-name-btn[data-id='${id}']`);
+            const payload = {
+                id: $('#editReservationId').val(),
+                title: $('#editTitle').val(),
+                castName: $('#editCast').val(),
+                startTime: $('#editStartTime').val(),
+                endTime: $('#editEndTime').val(),
+                isEdited: $('#editIsEdited').is(':checked')
+            }
 
-            const newName = input.val().trim();
-            if (!newName) return;
+            $.post('/Reservation/Update', payload)
+                .done(function (html) {
+                    $('#reservation-list').html(html)
+                    const modal = bootstrap.Modal.getInstance(
+                        document.getElementById('editReservationModal')
+                    )
+                    modal.hide()
+                    showToast('予約を更新しました');
+                })
+                .fail(() => showToast('予約の更新に失敗しました'))
+        })
 
-            $.ajax({
-                url: "/Reservation/UpdateProgramName",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    id: id,
-                    programName: newName
-                }),
-                success: function () {
-                    label.text(newName);
-
-                    label.removeClass("d-none");
-                    input.addClass("d-none");
-                    controls.addClass("d-none");
-                    editBtn.removeClass("d-none");
-                },
-                error: function () {
-                    alert("保存に失敗しました");
-                }
-            });
-        });
     </script>
 }

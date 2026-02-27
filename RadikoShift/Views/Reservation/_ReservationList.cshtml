@@ -21,24 +21,7 @@
                     @foreach (var r in Model)
                     {
                         <tr>
-                            <td>
-                                <span class="program-label" data-id="@r.Id">
-                                    @r.ProgramName
-                                </span>
-                                <input class="form-control form-control-sm program-edit d-none"
-                                        data-id="@r.Id"
-                                        value="@r.ProgramName" />
-
-                                <div class="btn-group btn-group-sm ms-1 edit-controls d-none" data-id="@r.Id">
-                                    <button class="btn btn-outline-primary save-name-btn" data-id="@r.Id">保存</button>
-                                    <button class="btn btn-outline-secondary cancel-edit-btn" data-id="@r.Id">取消</button>
-                                </div>
-
-                                <button class="btn btn-sm btn-outline-secondary edit-name-btn ms-1"
-                                        data-id="@r.Id">
-                                    ✏️
-                                </button>
-                            </td>
+                            <td>@r.ProgramName</td>
                             <td>@r.CastName</td>
                             <td>@r.StationName</td>
                             <td>@r.RepeatType</td>
@@ -47,6 +30,15 @@
                                 <span class="badge bg-secondary">@r.Status</span>
                             </td>
                             <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary edit-reserve-btn"
+                                        data-id="@r.Id"
+                                        data-title="@r.ProgramName"
+                                        data-cast="@r.CastName"
+                                        data-start="@r.StartTime.ToString(@"hh\:mm")"
+                                        data-end="@r.EndTime.ToString(@"hh\:mm")"
+                                        data-edited="@r.IsManual?.ToString().ToLower()">
+                                    ✏️
+                                </button>
                                 <button class="btn btn-sm btn-outline-danger cancel-btn"
                                         data-id="@r.Id">
                                     ❌
@@ -72,19 +64,7 @@
 
                                 <!-- 番組名 -->
                                 <div class="small fw-semibold">
-                                    <span class="program-label" data-id="@r.Id">
-                                        @r.ProgramName
-                                    </span>
-                                </div>
-
-                                <!-- 編集UI（入力 + 保存取消） -->
-                                <input class="form-control form-control-sm program-edit d-none mt-1"
-                                       data-id="@r.Id"
-                                       value="@r.ProgramName" />
-
-                                <div class="btn-group btn-group-sm mt-1 edit-controls d-none" data-id="@r.Id">
-                                    <button class="btn btn-outline-primary save-name-btn" data-id="@r.Id">保存</button>
-                                    <button class="btn btn-outline-secondary cancel-edit-btn" data-id="@r.Id">取消</button>
+                                    @r.ProgramName
                                 </div>
 
                                 <div class="small text-muted mt-1">
@@ -104,8 +84,13 @@
                             <!-- 右側：操作ボタン群 -->
                             <div class="text-nowrap ms-2">
 
-                                <button class="btn btn-sm btn-outline-secondary edit-name-btn me-1"
-                                        data-id="@r.Id">
+                                <button class="btn btn-sm btn-outline-secondary edit-reserve-btn me-1"
+                                        data-id="@r.Id"
+                                        data-title="@r.ProgramName"
+                                        data-cast="@r.CastName"
+                                        data-start="@r.StartTime.ToString(@"hh\:mm")"
+                                        data-end="@r.EndTime.ToString(@"hh\:mm")"
+                                        data-editted="@r.IsManual">
                                     ✏
                                 </button>
 

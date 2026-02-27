@@ -64,6 +64,24 @@ namespace RadikoShift.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Update(UpdateReservationRequest req)
+        {
+            var reservation = await _db.Reservations.FindAsync(req.Id);
+            if (reservation == null)
+            {
+                return NotFound();
+            }
+            reservation.ProgramName = req.Title;
+            reservation.CastName = req.CastName;
+            reservation.StartTime = req.StartTime;
+            reservation.EndTime = req.EndTime;
+            reservation.IsManual = req.IsEdited;
+            reservation.UpdatedAt = DateTime.Now;
+            await _db.SaveChangesAsync();
+            return PartialView("_ReservationList", await GetReservationsAsync());
+        }
+
         public async Task<IActionResult> ListPartial()
         {
             return PartialView("_ReservationList", await GetReservationsAsync());
@@ -87,18 +105,6 @@ namespace RadikoShift.Controllers
             reservation.Status = ReservationStatus.Canceled;
             reservation.UpdatedAt = DateTime.Now;
 
-            await _db.SaveChangesAsync();
-
-            return Ok();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UpdateProgramName([FromBody] UpdateProgramNameRequest req)
-        {
-            var r = await _db.Reservations.FindAsync(req.Id);
-            if (r == null) return NotFound();
-
-            r.ProgramName = req.ProgramName;
             await _db.SaveChangesAsync();
 
             return Ok();
