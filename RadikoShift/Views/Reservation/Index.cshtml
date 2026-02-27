@@ -29,12 +29,8 @@
 
 <!-- Toast -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="appToast" class="toast" role="alert">
-        <div class="toast-header">
-            <strong class="me-auto">通知</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body" id="toastMessage"></div>
+    <div id="appToast" class="toast text-bg-success border-0">
+        <div class="toast-body"></div>
     </div>
 </div>
 
@@ -131,11 +127,11 @@
 
             $.post('/Reservation/Cancel', { id: cancelTargetId })
                 .done(function () {
-                    showToast('予約をキャンセルしました');
+                    showToast('予約をキャンセルしました', 'success');
                     reloadReservationList();
                 })
                 .fail(function () {
-                    showToast('キャンセルに失敗しました');
+                    showToast('キャンセルに失敗しました', 'danger');
                 });
 
             cancelTargetId = null;
@@ -146,10 +142,15 @@
             $('#reservation-container').load('/Reservation/ListPartial');
         }
 
-        function showToast(message) {
-            $('#toastMessage').text(message);
-            const toast = new bootstrap.Toast(document.getElementById('appToast'));
-            toast.show();
+        function showToast(message, type) {
+            const toastEl = document.getElementById('appToast');
+
+            toastEl.classList.remove('text-bg-success', 'text-bg-danger');
+            toastEl.classList.add(`text-bg-${type}`);
+
+            toastEl.querySelector('.toast-body').textContent = message;
+
+            new bootstrap.Toast(toastEl, { delay: 2000 }).show();
         }
 
         $(document).on('click', '.edit-reserve-btn', function () {
@@ -188,9 +189,9 @@
                         document.getElementById('editReservationModal')
                     )
                     modal.hide()
-                    showToast('予約を更新しました');
+                    showToast('予約を更新しました', 'success');
                 })
-                .fail(() => showToast('予約の更新に失敗しました'))
+                .fail(() => showToast('予約の更新に失敗しました', 'danger'))
         })
 
     </script>
