@@ -30,12 +30,20 @@
                                 <span class="badge bg-secondary">@r.Status</span>
                             </td>
                             <td class="text-end">
+                                @if (r.RepeatType != RepeatType.Once)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary rerunprev-btn me-1"
+                                            data-id="@r.Id">
+                                        🔄
+                                    </button>
+                                }
+
                                 <button class="btn btn-sm btn-outline-secondary edit-reserve-btn"
                                         data-id="@r.Id"
                                         data-title="@r.ProgramName"
                                         data-cast="@r.CastName"
-                                        data-start="@r.StartTime.ToString(@"hh\:mm")"
-                                        data-end="@r.EndTime.ToString(@"hh\:mm")"
+                                        data-start="@r.StartTime.ToString(@"HH\:mm")"
+                                        data-end="@r.EndTime.ToString(@"HH\:mm")"
                                         data-edited="@r.IsManual?.ToString().ToLower()">
                                     ✏️
                                 </button>
@@ -84,13 +92,21 @@
                             <!-- 右側：操作ボタン群 -->
                             <div class="text-nowrap ms-2">
 
+                                @if(r.RepeatType != RepeatType.Once)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary rerunprev-btn me-1"
+                                            data-id="@r.Id">
+                                        🔄
+                                    </button>
+                                }
+
                                 <button class="btn btn-sm btn-outline-secondary edit-reserve-btn me-1"
                                         data-id="@r.Id"
                                         data-title="@r.ProgramName"
                                         data-cast="@r.CastName"
-                                        data-start="@r.StartTime.ToString(@"hh\:mm")"
-                                        data-end="@r.EndTime.ToString(@"hh\:mm")"
-                                        data-editted="@r.IsManual">
+                                        data-start="@r.StartTime.ToString(@"HH\:mm")"
+                                        data-end="@r.EndTime.ToString(@"HH\:mm")"
+                                        data-editted="@r.IsManual?.ToString().ToLower()">
                                     ✏
                                 </button>
 

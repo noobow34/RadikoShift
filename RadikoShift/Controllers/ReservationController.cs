@@ -80,6 +80,7 @@ namespace RadikoShift.Controllers
             reservation.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
+            this.JournalWriteLine($"予約を更新、ジョブを再登録します: {reservation}");
             await _scheduler.UnregisterAsync(reservation);
             await _scheduler.RegisterAsync(reservation);
 
@@ -110,6 +111,19 @@ namespace RadikoShift.Controllers
             reservation.UpdatedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> RerunPrevious(int id)
+        {
+            Reservation? r = await _db.Reservations.FindAsync(id);
+            if (r == null)
+            {
+                return NotFound();
+            }
+
+            await _scheduler.RegisterPrevious(r);
 
             return Ok();
         }

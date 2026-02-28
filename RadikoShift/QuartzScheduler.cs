@@ -1,4 +1,7 @@
-﻿using Quartz;
+﻿using AspNetCoreGeneratedDocument;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Quartz;
+using Quartz.Impl.Triggers;
 using RadikoShift.EF;
 using RadikoShift.Jobs;
 
@@ -33,6 +36,27 @@ namespace RadikoShift
             var trigger = BuildTrigger(reservation);
 
             await _scheduler.ScheduleJob(job, trigger);
+        }
+
+        public async Task RegisterPrevious(Reservation reservation)
+        {
+            var jobKey = new JobKey($"reservation-{reservation.Id}-prev");
+            this.JournalWriteLine($"前回分録音をSchedulerに登録します：{reservation}");
+            var job = JobBuilder.Create<RecordingJob>()
+                    .WithIdentity(jobKey)
+                    .UsingJobData("ReservationId", reservation.Id.ToString())
+                    .UsingJobData("IsPrev", true)
+                    .Build();
+
+            //即時実行
+            ITrigger trigger = TriggerBuilder.Create()
+                            .WithIdentity($"trigger-{reservation.Id}-prev")
+                            .StartNow()
+                            .Build();
+            await _scheduler.ScheduleJob(job, trigger);
+
+            this.JournalWriteLine($"前回分録音が完了したためジョブをSchedulerから削除：{reservation}");
+            await _scheduler.DeleteJob(jobKey);
         }
 
         private ITrigger BuildTrigger(Reservation r)

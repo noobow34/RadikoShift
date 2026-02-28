@@ -13,6 +13,11 @@ namespace RadikoShift.Jobs
             try
             {
                 int reservationId = context.JobDetail.JobDataMap.GetInt("ReservationId")!;
+                bool isPrev = context.JobDetail.JobDataMap.GetBoolean("IsPrev")!;
+                if (isPrev)
+                {
+                    this.JournalWriteLine($"前回分の録音を実施");
+                }
                 this.JournalWriteLine($"録音開始 予約ID:{reservationId}");
 
                 ShiftContext shiftContext = new();
@@ -29,7 +34,50 @@ namespace RadikoShift.Jobs
                     DateOnly baseDate;
                     if (reservation.TargetDate == null)
                     {
-                        baseDate = DateOnly.FromDateTime(DateTime.Now);
+                        if(isPrev)
+                        {
+                            if (reservation.RepeatType == RepeatType.Daily)
+                            {
+                                if (TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime)
+                                {
+                                    //開始時間に達してないので前回は前日
+                                    baseDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
+                                }
+                                else
+                                {
+                                    //開始時間に達してるので前回は当日
+                                    baseDate = DateOnly.FromDateTime(DateTime.Now);
+                                }
+                            }
+                            else if(reservation.RepeatType == RepeatType.Weekly)
+                            {
+                                if (DateTime.Now.DayOfWeek == reservation.RepeatDays)
+                                {
+                                    if (TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime)
+                                    {
+                                        //開始時間に達してないので前回は一週間前
+                                        baseDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-7));
+                                    }
+                                    else
+                                    {
+                                        //開始時間に達してるので前回は当日
+                                        baseDate = DateOnly.FromDateTime(DateTime.Now);
+                                    }
+                                }
+                                else
+                                {
+                                    baseDate = DateOnly.FromDateTime(GetPreviousWeekday(DateTime.Now, reservation.RepeatDays!.Value));
+                                }
+                            }
+                            else
+                            {
+                                baseDate = DateOnly.FromDateTime(DateTime.Now);
+                            }
+                        }
+                        else
+                        {
+                            baseDate = DateOnly.FromDateTime(DateTime.Now);
+                        }
                     }
                     else
                     {
@@ -155,6 +203,15 @@ namespace RadikoShift.Jobs
             {
                 this.JournalWriteLine($"録音ジョブ実行中に例外が発生: {ex.ToString}");
             }
+        }
+        private DateTime GetPreviousWeekday(DateTime baseDate, DayOfWeek targetDay)
+        {
+            int diff = (7 + (baseDate.DayOfWeek - targetDay)) % 7;
+
+            if (diff == 0)
+                diff = 7; // 同じ曜日なら1週間前
+
+            return baseDate.Date.AddDays(-diff);
         }
     }
 }

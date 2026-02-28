@@ -93,6 +93,27 @@
     </div>
 </div>
 
+<!-- Confirm Rerun Previous Modal -->
+<div class="modal fade" id="confirmRerunPrevModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">確認</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                前回分の録音を再実行しますか？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">戻る</button>
+                <button type="button" class="btn btn-primary" id="confirmRerunPrevBtn">
+                    再実行する
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @functions {
     string RenderSchedule(Reservation r)
     {
@@ -193,6 +214,38 @@
                 })
                 .fail(() => showToast('予約の更新に失敗しました', 'danger'))
         })
+
+        let rerunPrevTargetId = null;
+
+        // 🔄 ボタン押下
+        $(document).on('click', '.rerunprev-btn', function () {
+            rerunPrevTargetId = $(this).data('id');
+
+            const modal = bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('confirmRerunPrevModal')
+            );
+            modal.show();
+        });
+
+        // 確定ボタン押下
+        $('#confirmRerunPrevBtn').on('click', function () {
+
+            if (!rerunPrevTargetId) return;
+
+            $.post('/Reservation/RerunPrevious', { id: rerunPrevTargetId })
+                .done(function () {
+                    showToast('前回分の録音を再実行しました', 'success');
+                })
+                .fail(function () {
+                    showToast('再実行に失敗しました', 'danger');
+                });
+
+            rerunPrevTargetId = null;
+
+            bootstrap.Modal.getInstance(
+                document.getElementById('confirmRerunPrevModal')
+            ).hide();
+        });
 
     </script>
 }
