@@ -79,6 +79,10 @@ namespace RadikoShift.Controllers
             reservation.IsManual = req.IsEdited;
             reservation.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
+
+            await _scheduler.UnregisterAsync(reservation);
+            await _scheduler.RegisterAsync(reservation);
+
             return PartialView("_ReservationList", await GetReservationsAsync());
         }
 
