@@ -1,4 +1,5 @@
 ﻿using RadikoShift.EF;
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -121,8 +122,8 @@ namespace RadikoShift.Radio
                     .Select(prog => new EF.Program()
                     {
                         Id = station.Id + prog.Attribute("ft")?.Value + prog.Attribute("to")?.Value,
-                        StartTime = Utility.Text.StringToDate(prog.Attribute("ft")?.Value!),
-                        EndTime = Utility.Text.StringToDate(prog.Attribute("to")?.Value!),
+                        StartTime = DateTime.ParseExact(prog.Attribute("ft")?.Value!,"yyyyMMddHHmmss",CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
+                        EndTime = DateTime.ParseExact(prog.Attribute("to")?.Value!, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
                         Title = prog.Element("title")?.Value.Trim(),
                         CastName = prog.Element("pfm")?.Value.Trim(),
                         Description = prog.Element("info")?.Value.Trim(),
