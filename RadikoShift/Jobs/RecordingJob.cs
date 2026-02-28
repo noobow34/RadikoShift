@@ -122,8 +122,10 @@ namespace RadikoShift.Jobs
                         Arguments = $"{arg1} {arg2}"
                     };
                     this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {arg1} -m *** -p ***");
-                    Process recProcess = new();
-                    recProcess.StartInfo = recProcessInfo;
+                    Process recProcess = new()
+                    {
+                        StartInfo = recProcessInfo
+                    };
                     recProcess.Start();
                     recProcess.WaitForExitAsync().Wait();
                     if (recProcess.ExitCode != 0)
@@ -135,9 +137,11 @@ namespace RadikoShift.Jobs
                         return;
                     }
                     //タグ埋め込み
-                    Track recorded = new(fileName);
-                    recorded.Title = programName;
-                    recorded.Artist = $"{reservation.StationName}-{castName}";
+                    Track recorded = new(fileName)
+                    {
+                        Title = programName,
+                        Artist = $"{reservation.StationName}-{castName}"
+                    };
                     if (!string.IsNullOrEmpty(imageUrl))
                     {
                         //画像取得してタグ埋め込み
