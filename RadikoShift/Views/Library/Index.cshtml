@@ -59,15 +59,16 @@
             let deleteTargetId = null;
 
             // 削除ボタン → モーダル表示
-            $('#recording-list').on('click', '.btn-delete', function () {
+            $(document).on('click', '.btn-delete', function () {
                 deleteTargetId = $(this).data('id');
 
-                const modal = new bootstrap.Modal('#deleteModal');
+                const modalEl = document.getElementById('deleteModal');
+                const modal = new bootstrap.Modal(modalEl);
                 modal.show();
             });
 
             // モーダルの「削除する」
-            $('#confirmDelete').on('click', function () {
+            $(document).on('click', '#confirmDelete', function () {
                 if (!deleteTargetId) return;
 
                 $.post('/Library/Delete', { id: deleteTargetId })

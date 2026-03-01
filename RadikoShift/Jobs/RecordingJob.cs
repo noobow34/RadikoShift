@@ -13,7 +13,11 @@ namespace RadikoShift.Jobs
             try
             {
                 int reservationId = context.JobDetail.JobDataMap.GetInt("ReservationId")!;
-                bool isPrev = context.JobDetail.JobDataMap.GetBoolean("IsPrev")!;
+                bool isPrev = false;
+                if (context.JobDetail.JobDataMap.ContainsKey("IsPrev"))
+                {
+                    isPrev = context.JobDetail.JobDataMap.GetBoolean("IsPrev");
+                }
                 if (isPrev)
                 {
                     this.JournalWriteLine($"前回分の録音を実施");
