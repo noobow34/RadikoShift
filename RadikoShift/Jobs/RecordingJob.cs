@@ -205,7 +205,7 @@ namespace RadikoShift.Jobs
                 var api = new SlackServiceBuilder()
                         .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
                         .GetApiClient();
-                await api.Chat.PostMessage(new Message { Text = $"予約完了\n{reservation}\n{rec}", Channel = Environment.GetEnvironmentVariable("SLAC_NOTIFY_CHANNEL") });
+                await api.Chat.PostMessage(new Message { Text = $"予約完了\n{reservation}\n{rec}", Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL") });
 
                 if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
                 {
@@ -217,7 +217,12 @@ namespace RadikoShift.Jobs
             }
             catch (Exception ex)
             {
-                this.JournalWriteLine($"録音ジョブ実行中に例外が発生: {ex.ToString}");
+                var api = new SlackServiceBuilder()
+                            .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
+                            .GetApiClient();
+                string errorMessage = $"録音ジョブ実行中に例外が発生:{ex.StackTrace}";
+                await api.Chat.PostMessage(new Message { Text = errorMessage, Channel = Environment.GetEnvironmentVariable("SLAC_NOTIFY_CHANNEL") });
+                this.JournalWriteLine(errorMessage);
             }
         }
         private DateTime GetPreviousWeekday(DateTime baseDate, DayOfWeek targetDay)
