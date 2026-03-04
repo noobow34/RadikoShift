@@ -3,6 +3,8 @@ using Npgsql.Bulk;
 using Quartz;
 using RadikoShift.EF;
 using RadikoShift.Radio;
+using SlackNet;
+using SlackNet.WebApi;
 using System.Collections.Concurrent;
 
 namespace RadikoShift.Jobs
@@ -70,7 +72,12 @@ namespace RadikoShift.Jobs
             }
             catch (Exception ex)
             {
-                this.JournalWriteLine($"放送局・番組表更新ジョブ実行中に例外が発生:{ex.ToString}");
+                var api = new SlackServiceBuilder()
+                            .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
+                            .GetApiClient();
+                string errorMessage = $"放送局・番組表更新ジョブ実行中に例外が発生:{ex.StackTrace}";
+                await api.Chat.PostMessage(new Message { Text = errorMessage, Channel = Environment.GetEnvironmentVariable("SLAC_NOTIFY_CHANNEL") });
+                this.JournalWriteLine(errorMessage);
             }
         }
     }

@@ -2,7 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using RadikoShift.EF;
+using SlackNet;
+using SlackNet.WebApi;
 using System.Diagnostics;
+using File = System.IO.File;
 
 namespace RadikoShift.Jobs
 {
@@ -25,6 +28,7 @@ namespace RadikoShift.Jobs
                 this.JournalWriteLine($"録音開始 予約ID:{reservationId}");
 
                 ShiftContext shiftContext = new();
+                Recording rec = new();
                 var reservation = shiftContext.Reservations.Find(reservationId);
                 if (reservation != null)
                 {
@@ -160,7 +164,7 @@ namespace RadikoShift.Jobs
 
                     //保存             
                     byte[] recordedByte = File.ReadAllBytes(fileName);
-                    var recording = new Recording
+                    rec = new Recording
                     {
                         ReservationId = reservation.Id,
                         ProgramId = programId,
@@ -179,9 +183,9 @@ namespace RadikoShift.Jobs
 
                         CreatedAt = DateTime.UtcNow
                     };
-                    shiftContext.Recordings.Add(recording);
+                    shiftContext.Recordings.Add(rec);
                     await shiftContext.SaveChangesAsync();
-                    this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{recording.Id}");
+                    this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{rec.Id}");
 
                     //ファイル削除                
                     File.Delete(fileName);
@@ -198,6 +202,10 @@ namespace RadikoShift.Jobs
                 await shiftContext.SaveChangesAsync();
                 this.JournalWriteLine($"ステータス更新");
                 this.JournalWriteLine($"録音完了 予約ID:{reservationId}");
+                var api = new SlackServiceBuilder()
+                        .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
+                        .GetApiClient();
+                await api.Chat.PostMessage(new Message { Text = $"予約完了\n{reservation}\n{rec}", Channel = Environment.GetEnvironmentVariable("SLAC_NOTIFY_CHANNEL") });
 
                 if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
                 {
