@@ -37,6 +37,7 @@ namespace RadikoShift.Jobs
                 List<Task> tasks = [];
                 List<EF.Program> programs = [];
 
+                int threadId = 0;
                 foreach (var partition in stationPartitions)
                 {
                     tasks.Add(Task.Run(async () =>
@@ -49,7 +50,7 @@ namespace RadikoShift.Jobs
                             {
                                 var station = partition.Current;
 
-                                this.JournalWriteLine(station.Name!);
+                                this.JournalWriteLine($"{++threadId}:station.Name!");
 
                                 var programs = await Radiko.GetPrograms(station);
                                 localPrograms.AddRange(programs);
