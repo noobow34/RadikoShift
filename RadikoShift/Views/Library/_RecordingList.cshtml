@@ -92,41 +92,44 @@
         }
     </div>
 
-    <!-- ===== 単発録音：Table ===== -->
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th>番組</th>
-                <th>局</th>
-                <th>時間</th>
-                <th>出演</th>
-                <th>サイズ</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var r in normalItems)
-            {
-                <tr data-id="@r.Id">
-                    <td>@r.ProgramName</td>
-                    <td>@r.StationName</td>
-                    <td>@r.TimeRange</td>
-                    <td>@r.CastName</td>
-                    <td>@r.FileSizeText</td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-primary"
-                           href="@Url.Action("Download", new { id = r.Id })">
-                            📥
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger btn-delete"
-                                data-id="@r.Id">
-                            🗑️
-                        </button>
-                    </td>
+    @if(normalItems.Any())
+    {
+        <!-- ===== 単発録音：Table ===== -->
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>番組</th>
+                    <th>局</th>
+                    <th>時間</th>
+                    <th>出演</th>
+                    <th>サイズ</th>
+                    <th></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var r in normalItems)
+                {
+                    <tr data-id="@r.Id">
+                        <td>@r.ProgramName</td>
+                        <td>@r.StationName</td>
+                        <td>@r.TimeRange</td>
+                        <td>@r.CastName</td>
+                        <td>@r.FileSizeText</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-primary"
+                               href="@Url.Action("Download", new { id = r.Id })">
+                                📥
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger btn-delete"
+                                    data-id="@r.Id">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
 </div>
 
