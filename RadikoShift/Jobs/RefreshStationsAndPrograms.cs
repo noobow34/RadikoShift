@@ -6,6 +6,7 @@ using RadikoShift.Radio;
 using SlackNet;
 using SlackNet.WebApi;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace RadikoShift.Jobs
 {
@@ -20,6 +21,9 @@ namespace RadikoShift.Jobs
                 string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
                 string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
                 Radiko.Login(radikoMail, radikoPass).Wait();
+
+                Stopwatch sw = new();
+                sw.Start();
 
                 this.JournalWriteLine("放送局取得");
                 var stations = await Radiko.GetStations(true);
@@ -37,9 +41,11 @@ namespace RadikoShift.Jobs
                 List<Task> tasks = [];
                 List<EF.Program> programs = [];
 
-                int threadId = 0;
+                int taskId = 0;
                 foreach (var partition in stationPartitions)
                 {
+                    taskId++;
+                    int currentTaskId = taskId;
                     tasks.Add(Task.Run(async () =>
                     {
                         var localPrograms = new List<EF.Program>();
@@ -50,7 +56,7 @@ namespace RadikoShift.Jobs
                             {
                                 var station = partition.Current;
 
-                                this.JournalWriteLine($"{++threadId}:station.Name!");
+                                this.JournalWriteLine($"T{currentTaskId}:{station.Name!}");
 
                                 var programs = await Radiko.GetPrograms(station);
                                 localPrograms.AddRange(programs);
@@ -69,7 +75,8 @@ namespace RadikoShift.Jobs
                 var uploader = new NpgsqlBulkUploader(sContext);
                 uploader.Insert(stations);
                 uploader.Insert(programs);
-                this.JournalWriteLine("番組表更新終了");
+                sw.Stop();
+                this.JournalWriteLine($"番組表更新終了:{sw}");
             }
             catch (Exception ex)
             {
