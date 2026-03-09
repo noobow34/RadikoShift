@@ -1,5 +1,6 @@
 ﻿using ATL;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Quartz;
 using RadikoShift.EF;
 using SlackNet;
@@ -28,7 +29,7 @@ namespace RadikoShift.Jobs
                 this.JournalWriteLine($"録音開始 予約ID:{reservationId}");
 
                 ShiftContext shiftContext = new();
-                Recording rec = new();
+                Recording rec;
                 var reservation = shiftContext.Reservations.Find(reservationId);
                 if (reservation != null)
                 {
@@ -163,7 +164,15 @@ namespace RadikoShift.Jobs
                     this.JournalWriteLine($"録音ファイルタグ埋め込み");
 
                     //保存             
-                    byte[] recordedByte = File.ReadAllBytes(fileName);
+                    await using var conn = new Npgsql.NpgsqlConnection(
+                        shiftContext.Database.GetConnectionString());
+
+                    await conn.OpenAsync();
+
+                    await using var tx = await conn.BeginTransactionAsync();
+
+                    var fileInfo = new FileInfo(fileName);
+
                     rec = new Recording
                     {
                         ReservationId = reservation.Id,
@@ -176,15 +185,31 @@ namespace RadikoShift.Jobs
                         StartTime = startDateTime,
                         EndTime = endDateTime,
 
-                        FileName = fileName,
+                        FileName = Path.GetFileName(fileName),
                         MimeType = "audio/mp4",
-                        FileSize = recordedByte.Length,
-                        AudioData = recordedByte,
+                        FileSize = fileInfo.Length,
 
                         CreatedAt = DateTime.UtcNow
                     };
+
                     shiftContext.Recordings.Add(rec);
                     await shiftContext.SaveChangesAsync();
+
+                    await using var cmd = new NpgsqlCommand(@"
+                                        insert into recording_audio_data (recording_id, audio_data)
+                                        values (@id, @data)
+                                    ", conn, tx);
+
+                    cmd.Parameters.AddWithValue("id", rec.Id);
+
+                    await using var fs = File.OpenRead(fileName);
+
+                    var p = cmd.Parameters.Add("data", NpgsqlTypes.NpgsqlDbType.Bytea);
+                    p.Value = fs;
+
+                    await cmd.ExecuteNonQueryAsync();
+
+                    await tx.CommitAsync();
                     this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{rec.Id}");
 
                     //ファイル削除                

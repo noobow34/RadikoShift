@@ -47,9 +47,6 @@ namespace RadikoShift.EF
         [Column("file_size")]
         public long FileSize { get; set; }
 
-        [Column("audio_data")]
-        public byte[] AudioData { get; set; } = null!;
-
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 

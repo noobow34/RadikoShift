@@ -18,6 +18,8 @@ public partial class ShiftContext : DbContext
 
     public virtual DbSet<Recording> Recordings { get; set; }
 
+    public virtual DbSet<RecordingAudioData> RecordingAudioData { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         string connectionString = Environment.GetEnvironmentVariable("RADIKOSHIFT_CONNECTION_STRING") ?? "";

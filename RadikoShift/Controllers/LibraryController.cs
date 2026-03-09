@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using RadikoShift.EF;
 using RadikoShift.ViewModel;
+using System.Data;
 
 namespace RadikoShift.Controllers
 {
@@ -39,15 +41,40 @@ namespace RadikoShift.Controllers
 
         public async Task<IActionResult> Download(int id)
         {
-            var rec = await _db.Recordings.FindAsync(id);
-            if (rec == null)
+            await using var conn = (Npgsql.NpgsqlConnection)_db.Database.GetDbConnection();
+            await conn.OpenAsync(HttpContext.RequestAborted);
+
+            await using var cmd = new Npgsql.NpgsqlCommand(@"
+                                    select r.file_name, r.mime_type, a.audio_data
+                                    from recordings r
+                                    join recording_audio_data a on a.recording_id = r.id
+                                    where r.id = @id
+                                ", conn);
+
+            cmd.Parameters.AddWithValue("id", id);
+
+            await using var reader = await cmd.ExecuteReaderAsync(
+                CommandBehavior.SequentialAccess,
+                HttpContext.RequestAborted);
+
+            if (!await reader.ReadAsync(HttpContext.RequestAborted))
                 return NotFound();
 
-            return File(
-                rec.AudioData,
-                rec.MimeType ?? "audio/mp4",
-                rec.FileName
-            );
+            var fileName = reader.GetString(0);
+            var mimeType = reader.IsDBNull(1) ? "audio/mp4" : reader.GetString(1);
+            var stream = reader.GetStream(2);
+
+            Response.ContentType = mimeType;
+            var cd = new ContentDispositionHeaderValue("attachment");
+            cd.SetHttpFileName(fileName);
+            Response.Headers[HeaderNames.ContentDisposition] = cd.ToString();
+
+            await stream.CopyToAsync(
+                Response.Body,
+                81920,
+                HttpContext.RequestAborted);
+
+            return new EmptyResult();
         }
 
         [HttpPost]
