@@ -40,16 +40,14 @@ namespace RadikoShift.Radio
         /// 放送局取得
         /// </summary>
         /// <returns></returns>
-        public static async Task<List<Station>> GetStations(bool login)
+        public static async Task<List<Station>> GetStations(bool login, HttpClient httpClient)
         {
             var xmlUrl = Define.Radiko.StationListFull;
 
             if (!login)
             {
-                using var client = new HttpClient();
-
-                var text = await client.GetStringAsync(Define.Radiko.AreaCheck)
-                                       .ConfigureAwait(false);
+                var text = await httpClient.GetStringAsync(Define.Radiko.AreaCheck)
+                                           .ConfigureAwait(false);
 
                 var m = Regex.Match(text, @"JP[0-9]+");
                 if (m.Success)
@@ -60,10 +58,8 @@ namespace RadikoShift.Radio
 
             var res = new List<Station>();
 
-            // 非同期でXML読み込み
-            using var stream = await new HttpClient()
-                .GetStreamAsync(xmlUrl)
-                .ConfigureAwait(false);
+            var stream = await httpClient.GetStreamAsync(xmlUrl)
+                                         .ConfigureAwait(false);
 
             var doc = await XDocument.LoadAsync(stream, LoadOptions.None, CancellationToken.None)
                                      .ConfigureAwait(false);
@@ -77,9 +73,12 @@ namespace RadikoShift.Radio
 
                 foreach (var station in stations.Descendants("station"))
                 {
-                    var code = station.Descendants("id").First().Value;
-                    var name = station.Descendants("name").First().Value;
+                    var code = station.Descendants("id").FirstOrDefault()?.Value ?? "";
+                    var name = station.Descendants("name").FirstOrDefault()?.Value ?? "";
                     var areaId = station.Descendants("area_id").FirstOrDefault()?.Value ?? "";
+
+                    if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(name))
+                        continue;
 
                     res.Add(new Station
                     {
@@ -112,27 +111,26 @@ namespace RadikoShift.Radio
         /// </summary>
         /// <param name="station"></param>
         /// <returns></returns>
-        public static Task<List<EF.Program>> GetPrograms(Station station)
+        public static async Task<List<EF.Program>> GetPrograms(Station station, HttpClient httpClient)
         {
-            return Task.Factory.StartNew(() =>
-            {
-                var doc = XDocument.Load(Define.Radiko.WeeklyTimeTable.Replace("[stationCode]", station.Id));
+            var stream = await httpClient.GetStreamAsync(
+                Define.Radiko.WeeklyTimeTable.Replace("[stationCode]", station.Id));
 
-                return doc.Descendants("prog")
-                    .Select(prog => new EF.Program()
-                    {
-                        Id = station.Id + prog.Attribute("ft")?.Value + prog.Attribute("to")?.Value,
-                        StartTime = DateTime.ParseExact(prog.Attribute("ft")?.Value!,"yyyyMMddHHmmss",CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
-                        EndTime = DateTime.ParseExact(prog.Attribute("to")?.Value!, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
-                        Title = prog.Element("title")?.Value.Trim(),
-                        CastName = prog.Element("pfm")?.Value.Trim(),
-                        Description = prog.Element("info")?.Value.Trim(),
-                        StationId = station.Id,
-                        ImageUrl = prog.Element("img")?.Value.Trim(),
-                    })
-                    .ToList();
+            var doc = XDocument.Load(stream);
 
-            });
+            return doc.Descendants("prog")
+                .Select(prog => new EF.Program()
+                {
+                    Id = station.Id + prog.Attribute("ft")?.Value + prog.Attribute("to")?.Value,
+                    StartTime = DateTime.ParseExact(prog.Attribute("ft")?.Value!, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
+                    EndTime = DateTime.ParseExact(prog.Attribute("to")?.Value!, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal),
+                    Title = prog.Element("title")?.Value.Trim(),
+                    CastName = prog.Element("pfm")?.Value.Trim(),
+                    Description = prog.Element("info")?.Value.Trim(),
+                    StationId = station.Id,
+                    ImageUrl = prog.Element("img")?.Value.Trim(),
+                })
+                .ToList();
         }
     }
 }

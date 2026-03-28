@@ -7,11 +7,19 @@ using SlackNet;
 using SlackNet.WebApi;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net;
 
 namespace RadikoShift.Jobs
 {
     public class RefreshStationsAndPrograms : IJob
     {
+        private static readonly HttpClient _httpClient = new(
+            new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            }
+        );
+
         public async Task Execute(IJobExecutionContext context)
         {
             try
@@ -26,7 +34,7 @@ namespace RadikoShift.Jobs
                 sw.Start();
 
                 this.JournalWriteLine("放送局取得");
-                var stations = await Radiko.GetStations(true);
+                var stations = await Radiko.GetStations(true,_httpClient);
                 ShiftContext sContext = new();
                 this.JournalWriteLine("stations全件削除");
                 await sContext.Stations.ExecuteDeleteAsync();
@@ -58,7 +66,7 @@ namespace RadikoShift.Jobs
 
                                 this.JournalWriteLine($"T{currentTaskId}:{station.Name!}");
 
-                                var programs = await Radiko.GetPrograms(station);
+                                var programs = await Radiko.GetPrograms(station,_httpClient);
                                 localPrograms.AddRange(programs);
                             }
                         }
