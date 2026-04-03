@@ -32,8 +32,20 @@ namespace RadikoShift.Controllers
                 .OrderBy(r => r.DisplayOrder)
                 .ToList();
 
-            string minDate = _db.Programs.Min(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
-            string maxDate = _db.Programs.Max(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
+            string minDate;
+            string maxDate;
+
+            if (_db.Programs.Any())
+            {
+                minDate = _db.Programs.Min(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
+                maxDate = _db.Programs.Max(p => p.StartTime)!.Value.ToString("yyyy-MM-dd");
+            }
+            else
+            {
+                var today = DateTime.Today.ToString("yyyy-MM-dd");
+                minDate = today;
+                maxDate = today;
+            }
 
             var vm = new ProgramFilterViewModel { Regions = regions, MinDate = minDate, MaxDate = maxDate };
             return View(vm);
