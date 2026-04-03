@@ -42,24 +42,24 @@
                     <div class="d-flex align-items-center gap-2">
                         <input type="number" class="form-control text-center"
                                id="refreshHour" value="@Model.RefreshHour"
-                               min="0" max="23" style="width:80px" />
+                               min="@Model.MinRefreshHour" max="@Model.MaxRefreshHour" style="width:80px" />
                         <span>時</span>
                         <input type="number" class="form-control text-center"
                                id="refreshMinute" value="@Model.RefreshMinute"
-                               min="0" max="59" style="width:80px" />
+                               min="@Model.MinRefreshMinute" max="@Model.MaxRefreshMinute" style="width:80px" />
                         <span>分</span>
                     </div>
-                    <div class="form-text">毎日この時刻に番組表を自動更新します（デフォルト: 6:00）</div>
+                    <div class="form-text">毎日この時刻に番組表を自動更新します（デフォルト: @Model.DefaultRefreshHour:@Model.DefaultRefreshMinute.ToString("D2")）</div>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">番組表取得の並列数</label>
                     <div class="d-flex align-items-center gap-2">
                         <input type="number" class="form-control text-center"
                                id="parallelCount" value="@Model.ParallelCount"
-                               min="1" max="50" style="width:80px" />
+                               min="@Model.MinParallelCount" max="@Model.MaxParallelCount" style="width:80px" />
                         <span>並列</span>
                     </div>
-                    <div class="form-text">放送局ごとの番組取得を何並列で行うか設定します（デフォルト: 10）</div>
+                    <div class="form-text">放送局ごとの番組取得を何並列で行うか設定します（デフォルト: @Model.DefaultParallelCount）</div>
                 </div>
                 <button type="button" class="btn btn-success w-100" id="btnSave">保存</button>
             </div>
@@ -210,34 +210,3 @@
     });
 </script>
 }
-
-<!-- 実行ログ モーダル -->
-<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="logModalLabel">番組表更新 直近実行ログ</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-            </div>
-            <div class="modal-body">
-                <!-- サマリー -->
-                <div id="logSummary" class="mb-3 d-none">
-                    <div class="d-flex gap-3 align-items-center flex-wrap">
-                        <span id="logBadge" class="badge fs-6"></span>
-                        <small class="text-muted">開始: <span id="logStartedAt"></span></small>
-                        <small class="text-muted">終了: <span id="logFinishedAt"></span></small>
-                        <small class="text-muted">所要: <span id="logElapsed"></span></small>
-                    </div>
-                </div>
-                <!-- ログ本文 -->
-                <pre id="logContent"
-                     class="bg-dark text-light rounded p-3 small"
-                     style="max-height:460px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;">
-                </pre>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
-            </div>
-        </div>
-    </div>
-</div>

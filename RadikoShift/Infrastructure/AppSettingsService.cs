@@ -14,6 +14,13 @@ namespace RadikoShift.Infrastructure
         public const int DefaultRefreshMinute = 0;
         public const int DefaultParallelCount = 10;
 
+        public const int MinRefreshHour   = 0;
+        public const int MaxRefreshHour   = 23;
+        public const int MinRefreshMinute = 0;
+        public const int MaxRefreshMinute = 59;
+        public const int MinParallelCount = 1;
+        public const int MaxParallelCount = 50;
+
         private readonly ShiftContext _db;
 
         public AppSettingsService(ShiftContext db)

@@ -31,9 +31,9 @@ namespace RadikoShift.Controllers
         [HttpPost]
         public async Task<IActionResult> Save(int refreshHour, int refreshMinute, int parallelCount)
         {
-            refreshHour   = Math.Clamp(refreshHour,   0, 23);
-            refreshMinute = Math.Clamp(refreshMinute, 0, 59);
-            parallelCount = Math.Clamp(parallelCount, 1, 50);
+            refreshHour   = Math.Clamp(refreshHour,   AppSettingsService.MinRefreshHour,   AppSettingsService.MaxRefreshHour);
+            refreshMinute = Math.Clamp(refreshMinute, AppSettingsService.MinRefreshMinute, AppSettingsService.MaxRefreshMinute);
+            parallelCount = Math.Clamp(parallelCount, AppSettingsService.MinParallelCount, AppSettingsService.MaxParallelCount);
 
             await _settings.SetAsync(AppSettingsService.KeyRefreshHour,   refreshHour.ToString());
             await _settings.SetAsync(AppSettingsService.KeyRefreshMinute, refreshMinute.ToString());
