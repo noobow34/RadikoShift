@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RadikoShift.EF
+namespace RadikoShift.Data
 {
     [Table("recording_audio_data")]
     public class RecordingAudioData

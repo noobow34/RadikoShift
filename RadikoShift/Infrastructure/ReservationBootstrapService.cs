@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using RadikoShift.EF;
+using Microsoft.EntityFrameworkCore;
+using RadikoShift.Data;
+using RadikoShift.Reservations;
 
-namespace RadikoShift
+namespace RadikoShift.Infrastructure
 {
     public class ReservationBootstrapService : IHostedService
     {
@@ -15,7 +16,7 @@ namespace RadikoShift
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             using var scope = _services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ShiftContext>();
+            var db        = scope.ServiceProvider.GetRequiredService<ShiftContext>();
             var scheduler = scope.ServiceProvider.GetRequiredService<QuartzScheduler>();
 
             var reservations = await db.Reservations
@@ -23,12 +24,9 @@ namespace RadikoShift
                 .ToListAsync(cancellationToken);
 
             foreach (var r in reservations)
-            {
                 await scheduler.RegisterAsync(r);
-            }
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

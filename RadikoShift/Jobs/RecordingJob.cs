@@ -1,8 +1,10 @@
-﻿using ATL;
+using ATL;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Quartz;
-using RadikoShift.EF;
+using RadikoShift.Data;
+using RadikoShift.Infrastructure;
+using RadikoShift.Reservations;
 using SlackNet;
 using SlackNet.WebApi;
 using System.Diagnostics;
@@ -19,68 +21,50 @@ namespace RadikoShift.Jobs
                 int reservationId = context.JobDetail.JobDataMap.GetInt("ReservationId")!;
                 bool isPrev = false;
                 if (context.JobDetail.JobDataMap.ContainsKey("IsPrev"))
-                {
                     isPrev = context.JobDetail.JobDataMap.GetBoolean("IsPrev");
-                }
-                if (isPrev)
-                {
-                    this.JournalWriteLine($"前回分の録音を実施");
-                }
+
+                if (isPrev) this.JournalWriteLine("前回分の録音を実施");
                 this.JournalWriteLine($"録音開始 予約ID:{reservationId}");
 
                 ShiftContext shiftContext = new();
                 Recording rec;
                 var reservation = shiftContext.Reservations.Find(reservationId);
-                if (reservation != null)
+                if (reservation == null)
                 {
-                    reservation.Status = ReservationStatus.Running;
-                    reservation.UpdatedAt = DateTime.Now;
-                    await shiftContext.SaveChangesAsync();
+                    this.JournalWriteLine($"録音失敗 予約ID:{reservationId} が見つかりません");
+                    return;
+                }
 
-                    string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
-                    string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
-                    string station = reservation.StationId;
-                    DateOnly baseDate;
-                    if (reservation.TargetDate == null)
+                reservation.Status = ReservationStatus.Running;
+                reservation.UpdatedAt = DateTime.Now;
+                await shiftContext.SaveChangesAsync();
+
+                string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
+                string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
+                string station = reservation.StationId;
+                DateOnly baseDate;
+
+                if (reservation.TargetDate == null)
+                {
+                    if (isPrev)
                     {
-                        if(isPrev)
+                        if (reservation.RepeatType == RepeatType.Daily)
                         {
-                            if (reservation.RepeatType == RepeatType.Daily)
+                            baseDate = TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime
+                                ? DateOnly.FromDateTime(DateTime.Now.AddDays(-1))
+                                : DateOnly.FromDateTime(DateTime.Now);
+                        }
+                        else if (reservation.RepeatType == RepeatType.Weekly)
+                        {
+                            if (DateTime.Now.DayOfWeek == reservation.RepeatDays)
                             {
-                                if (TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime)
-                                {
-                                    //開始時間に達してないので前回は前日
-                                    baseDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-1));
-                                }
-                                else
-                                {
-                                    //開始時間に達してるので前回は当日
-                                    baseDate = DateOnly.FromDateTime(DateTime.Now);
-                                }
-                            }
-                            else if(reservation.RepeatType == RepeatType.Weekly)
-                            {
-                                if (DateTime.Now.DayOfWeek == reservation.RepeatDays)
-                                {
-                                    if (TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime)
-                                    {
-                                        //開始時間に達してないので前回は一週間前
-                                        baseDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-7));
-                                    }
-                                    else
-                                    {
-                                        //開始時間に達してるので前回は当日
-                                        baseDate = DateOnly.FromDateTime(DateTime.Now);
-                                    }
-                                }
-                                else
-                                {
-                                    baseDate = DateOnly.FromDateTime(GetPreviousWeekday(DateTime.Now, reservation.RepeatDays!.Value));
-                                }
+                                baseDate = TimeOnly.FromDateTime(DateTime.Now) < reservation.StartTime
+                                    ? DateOnly.FromDateTime(DateTime.Now.AddDays(-7))
+                                    : DateOnly.FromDateTime(DateTime.Now);
                             }
                             else
                             {
-                                baseDate = DateOnly.FromDateTime(DateTime.Now);
+                                baseDate = DateOnly.FromDateTime(GetPreviousWeekday(DateTime.Now, reservation.RepeatDays!.Value));
                             }
                         }
                         else
@@ -90,147 +74,140 @@ namespace RadikoShift.Jobs
                     }
                     else
                     {
-                        baseDate = reservation.TargetDate!.Value;
+                        baseDate = DateOnly.FromDateTime(DateTime.Now);
                     }
-                    var startDateTime = new DateTime(baseDate, reservation.StartTime);
-                    var endDateTime = new DateTime(baseDate, reservation.EndTime);
-                    // 日付またぎ対応
-                    if (endDateTime <= startDateTime)
-                    {
-                        endDateTime = endDateTime.AddDays(1);
-                        this.JournalWriteLine($"日付またぎ対応 録音終了日時を翌日に変更: {endDateTime}");
-                    }
-
-                    //繰り返し録音の場合は今回のProgram情報を取得
-                    string? programName = reservation.ProgramName;
-                    string? castName = reservation.CastName;
-                    string? imageUrl = reservation.ImageUrl;
-                    string programId = reservation.ProgramId;
-                    if ((reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily) && !reservation.IsManual!.Value)
-                    {
-                        this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
-                        var program = await shiftContext.Programs.Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime).FirstOrDefaultAsync();
-                        if (program != null)
-                        {
-                            this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得成功 予約ID:{reservationId}");
-                            programId = program.Id;
-                            programName = program.Title;
-                            castName = program.CastName;
-                            imageUrl = program.ImageUrl;
-                        }
-                    }
-
-                    string startTime = startDateTime.ToString("yyyyMMddHHmmss");
-                    string endTime = endDateTime.ToString("yyyyMMddHHmmss");
-                    string fileName = $@"0_{baseDate:yyyyMMdd}_{programName}.m4a";
-                    string arg1 = $@"-s {station} -f {startTime} -t {endTime} -o ""{fileName}""";
-                    string arg2 = $@"-m ""{radikoMail}"" -p ""{radikoPass}""";
-                    ProcessStartInfo recProcessInfo = new()
-                    {
-                        FileName = "Tools/rec_radiko_ts.sh",
-                        Arguments = $"{arg1} {arg2}"
-                    };
-                    this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {arg1} -m *** -p ***");
-                    Process recProcess = new()
-                    {
-                        StartInfo = recProcessInfo
-                    };
-                    recProcess.Start();
-                    recProcess.WaitForExitAsync().Wait();
-                    if (recProcess.ExitCode != 0)
-                    {
-                        this.JournalWriteLine($"録音失敗 予約ID:{reservationId} 録音コマンドの終了コード:{recProcess.ExitCode}");
-                        reservation.Status = ReservationStatus.Failed;
-                        reservation.UpdatedAt = DateTime.Now;
-                        await shiftContext.SaveChangesAsync();
-                        return;
-                    }
-                    //タグ埋め込み
-                    Track recorded = new(fileName)
-                    {
-                        Title = programName,
-                        Artist = $"{reservation.StationName}-{castName}"
-                    };
-                    if (!string.IsNullOrEmpty(imageUrl))
-                    {
-                        //画像取得してタグ埋め込み
-                        using var httpClient = new HttpClient();
-                        var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
-                        var picture = PictureInfo.fromBinaryData(imageBytes, PictureInfo.PIC_TYPE.CD);
-                        recorded.EmbeddedPictures.Add(picture);
-                        this.JournalWriteLine($"録音ファイルタグ埋め込み 画像あり");
-                    }
-                    recorded.Save();
-                    this.JournalWriteLine($"録音ファイルタグ埋め込み");
-
-                    //保存             
-                    await using var conn = new Npgsql.NpgsqlConnection(
-                        shiftContext.Database.GetConnectionString());
-
-                    await conn.OpenAsync();
-
-                    await using var tx = await conn.BeginTransactionAsync();
-
-                    var fileInfo = new FileInfo(fileName);
-
-                    rec = new Recording
-                    {
-                        ReservationId = reservation.Id,
-                        ProgramId = programId,
-                        StationId = reservation.StationId,
-                        StationName = reservation.StationName,
-                        ProgramName = programName,
-                        CastName = castName,
-
-                        StartTime = startDateTime,
-                        EndTime = endDateTime,
-
-                        FileName = Path.GetFileName(fileName),
-                        MimeType = "audio/mp4",
-                        FileSize = fileInfo.Length,
-
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    shiftContext.Recordings.Add(rec);
-                    await shiftContext.SaveChangesAsync();
-
-                    await using var cmd = new NpgsqlCommand(@"
-                                        insert into recording_audio_data (recording_id, audio_data)
-                                        values (@id, @data)
-                                    ", conn, tx);
-
-                    cmd.Parameters.AddWithValue("id", rec.Id);
-
-                    await using var fs = File.OpenRead(fileName);
-
-                    var p = cmd.Parameters.Add("data", NpgsqlTypes.NpgsqlDbType.Bytea);
-                    p.Value = fs;
-
-                    await cmd.ExecuteNonQueryAsync();
-
-                    await tx.CommitAsync();
-                    this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{rec.Id}");
-
-                    //ファイル削除                
-                    File.Delete(fileName);
-                    this.JournalWriteLine($"録音ファイル削除: {fileName}");
                 }
                 else
                 {
-                    this.JournalWriteLine($"録音失敗 予約ID:{reservationId} が見つかりません");
+                    baseDate = reservation.TargetDate!.Value;
+                }
+
+                var startDateTime = new DateTime(baseDate, reservation.StartTime);
+                var endDateTime   = new DateTime(baseDate, reservation.EndTime);
+                if (endDateTime <= startDateTime)
+                {
+                    endDateTime = endDateTime.AddDays(1);
+                    this.JournalWriteLine($"日付またぎ対応 録音終了日時を翌日に変更: {endDateTime}");
+                }
+
+                string? programName = reservation.ProgramName;
+                string? castName    = reservation.CastName;
+                string? imageUrl    = reservation.ImageUrl;
+                string  programId   = reservation.ProgramId;
+
+                if ((reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily) && !reservation.IsManual!.Value)
+                {
+                    this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得 予約ID:{reservationId}");
+                    var program = await shiftContext.Programs
+                        .Where(p => p.StationId == reservation.StationId && p.StartTime == startDateTime)
+                        .FirstOrDefaultAsync();
+                    if (program != null)
+                    {
+                        this.JournalWriteLine($"繰り返し録音のためProgram情報を再取得成功 予約ID:{reservationId}");
+                        programId   = program.Id;
+                        programName = program.Title;
+                        castName    = program.CastName;
+                        imageUrl    = program.ImageUrl;
+                    }
+                }
+
+                string startTime = startDateTime.ToString("yyyyMMddHHmmss");
+                string endTime   = endDateTime.ToString("yyyyMMddHHmmss");
+                string fileName  = $@"0_{baseDate:yyyyMMdd}_{programName}.m4a";
+                string arg1 = $@"-s {station} -f {startTime} -t {endTime} -o ""{fileName}""";
+                string arg2 = $@"-m ""{radikoMail}"" -p ""{radikoPass}""";
+
+                ProcessStartInfo recProcessInfo = new()
+                {
+                    FileName  = "Tools/rec_radiko_ts.sh",
+                    Arguments = $"{arg1} {arg2}"
+                };
+                this.JournalWriteLine($"録音コマンド実行: {recProcessInfo.FileName} {arg1} -m *** -p ***");
+
+                Process recProcess = new() { StartInfo = recProcessInfo };
+                recProcess.Start();
+                recProcess.WaitForExitAsync().Wait();
+
+                if (recProcess.ExitCode != 0)
+                {
+                    this.JournalWriteLine($"録音失敗 予約ID:{reservationId} 録音コマンドの終了コード:{recProcess.ExitCode}");
+                    reservation.Status = ReservationStatus.Failed;
+                    reservation.UpdatedAt = DateTime.Now;
+                    await shiftContext.SaveChangesAsync();
                     return;
                 }
+
+                // タグ埋め込み
+                Track recorded = new(fileName)
+                {
+                    Title  = programName,
+                    Artist = $"{reservation.StationName}-{castName}"
+                };
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    using var httpClient = new HttpClient();
+                    var imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
+                    var picture = PictureInfo.fromBinaryData(imageBytes, PictureInfo.PIC_TYPE.CD);
+                    recorded.EmbeddedPictures.Add(picture);
+                    this.JournalWriteLine("録音ファイルタグ埋め込み 画像あり");
+                }
+                recorded.Save();
+                this.JournalWriteLine("録音ファイルタグ埋め込み");
+
+                // DB 保存
+                await using var conn = new NpgsqlConnection(shiftContext.Database.GetConnectionString());
+                await conn.OpenAsync();
+                await using var tx = await conn.BeginTransactionAsync();
+
+                var fileInfo = new FileInfo(fileName);
+                rec = new Recording
+                {
+                    ReservationId = reservation.Id,
+                    ProgramId     = programId,
+                    StationId     = reservation.StationId,
+                    StationName   = reservation.StationName,
+                    ProgramName   = programName,
+                    CastName      = castName,
+                    StartTime     = startDateTime,
+                    EndTime       = endDateTime,
+                    FileName      = Path.GetFileName(fileName),
+                    MimeType      = "audio/mp4",
+                    FileSize      = fileInfo.Length,
+                    CreatedAt     = DateTime.UtcNow
+                };
+
+                shiftContext.Recordings.Add(rec);
+                await shiftContext.SaveChangesAsync();
+
+                await using var cmd = new NpgsqlCommand(@"
+                    insert into recording_audio_data (recording_id, audio_data)
+                    values (@id, @data)", conn, tx);
+
+                cmd.Parameters.AddWithValue("id", rec.Id);
+                await using var fs = File.OpenRead(fileName);
+                var p = cmd.Parameters.Add("data", NpgsqlTypes.NpgsqlDbType.Bytea);
+                p.Value = fs;
+                await cmd.ExecuteNonQueryAsync();
+                await tx.CommitAsync();
+                this.JournalWriteLine($"録音ファイルをDBに保存 保存ID:{rec.Id}");
+
+                File.Delete(fileName);
+                this.JournalWriteLine($"録音ファイル削除: {fileName}");
 
                 reservation.Status = ReservationStatus.Completed;
                 reservation.UpdatedAt = DateTime.Now;
                 await shiftContext.SaveChangesAsync();
-                this.JournalWriteLine($"ステータス更新");
+                this.JournalWriteLine("ステータス更新");
                 this.JournalWriteLine($"録音完了 予約ID:{reservationId}");
+
                 var api = new SlackServiceBuilder()
-                        .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
-                        .GetApiClient();
-                await api.Chat.PostMessage(new Message { Text = $"予約完了\n{reservation}\n{rec}", Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL") });
+                    .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
+                    .GetApiClient();
+                await api.Chat.PostMessage(new Message
+                {
+                    Text    = $"予約完了\n{reservation}\n{rec}",
+                    Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL")
+                });
 
                 if (reservation.RepeatType == RepeatType.Weekly || reservation.RepeatType == RepeatType.Daily)
                 {
@@ -243,20 +220,18 @@ namespace RadikoShift.Jobs
             catch (Exception ex)
             {
                 var api = new SlackServiceBuilder()
-                            .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
-                            .GetApiClient();
+                    .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
+                    .GetApiClient();
                 string errorMessage = $"録音ジョブ実行中に例外が発生:{ex.StackTrace}";
                 await api.Chat.PostMessage(new Message { Text = errorMessage, Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL") });
                 this.JournalWriteLine(errorMessage);
             }
         }
+
         private DateTime GetPreviousWeekday(DateTime baseDate, DayOfWeek targetDay)
         {
             int diff = (7 + (baseDate.DayOfWeek - targetDay)) % 7;
-
-            if (diff == 0)
-                diff = 7; // 同じ曜日なら1週間前
-
+            if (diff == 0) diff = 7;
             return baseDate.Date.AddDays(-diff);
         }
     }

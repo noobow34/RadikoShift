@@ -1,8 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
-namespace RadikoShift
+namespace RadikoShift.Infrastructure
 {
-    public static class ObjectExtension
+    public static class JournalExtension
     {
         private static readonly ConditionalWeakTable<object, string> _instanceIdList = [];
 

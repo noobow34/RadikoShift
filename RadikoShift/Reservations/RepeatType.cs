@@ -1,4 +1,4 @@
-﻿namespace RadikoShift
+namespace RadikoShift.Reservations
 {
     public enum RepeatType
     {

@@ -1,0 +1,56 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using RadikoShift.Infrastructure;
+using RadikoShift.ViewModel;
+
+namespace RadikoShift.Controllers
+{
+    [Authorize]
+    public class SettingsController : Controller
+    {
+        private readonly AppSettingsService _settings;
+        private readonly QuartzScheduler _scheduler;
+
+        public SettingsController(AppSettingsService settings, QuartzScheduler scheduler)
+        {
+            _settings  = settings;
+            _scheduler = scheduler;
+        }
+
+        public IActionResult Index()
+        {
+            var vm = new SettingsViewModel
+            {
+                RefreshHour   = _settings.RefreshHour,
+                RefreshMinute = _settings.RefreshMinute,
+                ParallelCount = _settings.ParallelCount,
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Save(int refreshHour, int refreshMinute, int parallelCount)
+        {
+            refreshHour   = Math.Clamp(refreshHour,   0, 23);
+            refreshMinute = Math.Clamp(refreshMinute, 0, 59);
+            parallelCount = Math.Clamp(parallelCount, 1, 50);
+
+            await _settings.SetAsync(AppSettingsService.KeyRefreshHour,   refreshHour.ToString());
+            await _settings.SetAsync(AppSettingsService.KeyRefreshMinute, refreshMinute.ToString());
+            await _settings.SetAsync(AppSettingsService.KeyParallelCount, parallelCount.ToString());
+
+            await _scheduler.RescheduleRefreshJobAsync(refreshHour, refreshMinute, parallelCount);
+            this.JournalWriteLine($"設定変更: 番組表更新時刻={refreshHour:D2}:{refreshMinute:D2} 並列数={parallelCount}");
+
+            return Json(new { success = true, message = "設定を保存しました。" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RunNow()
+        {
+            await _scheduler.TriggerRefreshJobNowAsync(_settings.ParallelCount);
+            this.JournalWriteLine("番組表更新を手動実行");
+            return Json(new { success = true, message = "番組表更新を開始しました。完了までしばらくお待ちください。" });
+        }
+    }
+}

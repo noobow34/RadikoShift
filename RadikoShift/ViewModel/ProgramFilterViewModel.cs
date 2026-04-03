@@ -1,23 +1,16 @@
-﻿namespace RadikoShift.ViewModel
+namespace RadikoShift.ViewModel
 {
     public class ProgramFilterViewModel
     {
-        public string SelectedReagion { get; set; } = "";
-        public string SelectedArea { get; set; } = "";
+        public string SelectedRegion  { get; set; } = "";
+        public string SelectedArea    { get; set; } = "";
         public string SelectedStation { get; set; } = "";
-        public string MinDate { get; set; } = "";
-        public string MaxDate { get; set; } ="";
-        public DateTime SelectedDate { get; set; } = DateTime.Today;
+        public string MinDate         { get; set; } = "";
+        public string MaxDate         { get; set; } = "";
+        public DateTime SelectedDate  { get; set; } = DateTime.Today;
 
-        public List<IdNamePair> Reagions { get; set; } = new();
-        public List<IdNamePair> Areas { get; set; } = new();
+        public List<IdNamePair> Regions  { get; set; } = new();
+        public List<IdNamePair> Areas    { get; set; } = new();
         public List<IdNamePair> Stations { get; set; } = new();
-    }
-
-    public class IdNamePair
-    {
-        public string? Id { get; set; }
-        public string? Name { get; set; }
-        public int DisplayOrder { get; set; }
     }
 }

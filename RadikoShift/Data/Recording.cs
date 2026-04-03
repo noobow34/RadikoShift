@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RadikoShift.Reservations;
 
-namespace RadikoShift.EF
+namespace RadikoShift.Data
 {
     [Table("recordings")]
     public class Recording

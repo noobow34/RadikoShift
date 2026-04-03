@@ -1,8 +1,8 @@
-﻿namespace RadikoShift
+namespace RadikoShift.Reservations
 {
-    public class CreateReservationRequest
+    public class UpdateReservationRequest
     {
-        public long ProgramId { get; set; }
+        public int Id { get; set; }
 
         public string Title { get; set; } = null!;
 
@@ -11,8 +11,6 @@
         public TimeOnly StartTime { get; set; }
 
         public TimeOnly EndTime { get; set; }
-
-        public RepeatType RepeatType { get; set; }
 
         public bool IsEdited { get; set; }
     }

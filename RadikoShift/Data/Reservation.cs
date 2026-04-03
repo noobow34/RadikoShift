@@ -1,16 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using RadikoShift.Reservations;
 
-namespace RadikoShift.EF
+namespace RadikoShift.Data
 {
-
     [Table("reservations")]
     public class Reservation
     {
         [Key]
         [Column("id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }   // SERIAL対応
+        public int Id { get; set; }
 
         [Column("program_id")]
         [Required]
@@ -29,18 +29,15 @@ namespace RadikoShift.EF
         [Column("cast_name")]
         public string? CastName { get; set; }
 
-        // 毎回共通の開始・終了時刻
         [Column("start_time")]
         public TimeOnly StartTime { get; set; }
 
         [Column("end_time")]
         public TimeOnly EndTime { get; set; }
 
-        // 単発予約用（日付）
         [Column("target_date")]
         public DateOnly? TargetDate { get; set; }
 
-        // 0:Once / 1:Daily / 2:Weekly
         [Column("repeat_type")]
         public RepeatType RepeatType { get; set; }
 
