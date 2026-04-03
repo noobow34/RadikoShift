@@ -15,6 +15,8 @@ namespace RadikoShift.Jobs
     {
         public async Task Execute(IJobExecutionContext context)
         {
+            ShiftContext? stagingContext = null;
+
             try
             {
                 this.JournalWriteLine("番組表更新開始");
@@ -22,7 +24,6 @@ namespace RadikoShift.Jobs
                 string radikoMail = Environment.GetEnvironmentVariable("RADIKO_MAIL") ?? "";
                 string radikoPass = Environment.GetEnvironmentVariable("RADIKO_PASS") ?? "";
 
-                // ログイン済み HttpClient を生成（Cookieが正しく引き継がれる）
                 using var httpClient = await RadikoClient.CreateHttpClient(radikoMail, radikoPass);
                 this.JournalWriteLine("ログイン完了");
 
@@ -37,12 +38,12 @@ namespace RadikoShift.Jobs
                 this.JournalWriteLine("放送局取得");
                 var stations = await RadikoClient.GetStations(true, httpClient);
 
-                ShiftContext sContext = new();
-                this.JournalWriteLine("stations全件削除");
-                await sContext.Stations.ExecuteDeleteAsync();
-                this.JournalWriteLine("programs全件削除");
-                await sContext.Programs.ExecuteDeleteAsync();
+                // ── ステージングテーブル作成 ──────────────────────────
+                stagingContext = new ShiftStagingContext();
+                await CreateStagingTablesAsync(stagingContext);
+                this.JournalWriteLine("ステージングテーブル作成");
 
+                // ── プログラム並列取得 ────────────────────────────────
                 var stationPartitions = Partitioner
                     .Create(stations, EnumerablePartitionerOptions.NoBuffering)
                     .GetPartitions(partitionCount);
@@ -76,21 +77,87 @@ namespace RadikoShift.Jobs
                 }
 
                 await Task.WhenAll(tasks);
-                this.JournalWriteLine("保存");
-                var uploader = new NpgsqlBulkUploader(sContext);
-                uploader.Insert(stations);
-                uploader.Insert(programs);
+
+                // ── ステージングへBulk Insert ─────────────────────────
+                this.JournalWriteLine("ステージングへ保存");
+                var uploader = new NpgsqlBulkUploader(stagingContext);
+                uploader.Insert(stations);  // stations_staging へ
+                uploader.Insert(programs);  // programs_staging へ
+
+                // ── アトミック切り替え ────────────────────────────────
+                this.JournalWriteLine("テーブル切り替え");
+                await SwapTablesAsync(stagingContext);
+
                 sw.Stop();
                 this.JournalWriteLine($"番組表更新終了:{sw}");
             }
             catch (Exception ex)
             {
+                // ステージングテーブルが残っていれば掃除
+                if (stagingContext != null)
+                {
+                    try { await DropStagingTablesAsync(stagingContext); }
+                    catch { /* 掃除失敗は無視 */ }
+                }
+
                 var api = new SlackServiceBuilder()
                     .UseApiToken(Environment.GetEnvironmentVariable("SLACK_BOT_TOKEN"))
                     .GetApiClient();
                 string errorMessage = $"放送局・番組表更新ジョブ実行中に例外が発生:{ex.StackTrace}";
-                await api.Chat.PostMessage(new Message { Text = errorMessage, Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL") });
+                await api.Chat.PostMessage(new Message
+                {
+                    Text = errorMessage,
+                    Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL")
+                });
                 this.JournalWriteLine(errorMessage);
+            }
+            finally
+            {
+                stagingContext?.Dispose();
+            }
+        }
+
+        // ── ステージングテーブル作成 ──────────────────────────────────
+        private static async Task CreateStagingTablesAsync(ShiftContext ctx)
+        {
+            var db = ctx.Database;
+            await db.ExecuteSqlRawAsync("DROP TABLE IF EXISTS stations_staging");
+            await db.ExecuteSqlRawAsync("DROP TABLE IF EXISTS programs_staging");
+            await db.ExecuteSqlRawAsync("CREATE TABLE stations_staging (LIKE stations INCLUDING ALL)");
+            await db.ExecuteSqlRawAsync("CREATE TABLE programs_staging (LIKE programs INCLUDING ALL)");
+        }
+
+        private static async Task DropStagingTablesAsync(ShiftContext ctx)
+        {
+            var db = ctx.Database;
+            await db.ExecuteSqlRawAsync("DROP TABLE IF EXISTS stations_staging");
+            await db.ExecuteSqlRawAsync("DROP TABLE IF EXISTS programs_staging");
+        }
+
+        // ── アトミック切り替え ────────────────────────────────────────
+        private static async Task SwapTablesAsync(ShiftContext ctx)
+        {
+            var db = ctx.Database;
+
+            // EF Core のトランザクションで囲む
+            await using var tx = await db.BeginTransactionAsync();
+            try
+            {
+                await db.ExecuteSqlRawAsync("ALTER TABLE stations RENAME TO stations_old");
+                await db.ExecuteSqlRawAsync("ALTER TABLE stations_staging RENAME TO stations");
+
+                await db.ExecuteSqlRawAsync("ALTER TABLE programs RENAME TO programs_old");
+                await db.ExecuteSqlRawAsync("ALTER TABLE programs_staging RENAME TO programs");
+
+                await db.ExecuteSqlRawAsync("DROP TABLE stations_old");
+                await db.ExecuteSqlRawAsync("DROP TABLE programs_old cascade");
+
+                await tx.CommitAsync();
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
             }
         }
     }
