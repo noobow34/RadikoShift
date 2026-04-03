@@ -1,4 +1,5 @@
 using RadikoShift.Data;
+using System.Text.Json;
 
 namespace RadikoShift.Infrastructure
 {
@@ -7,6 +8,7 @@ namespace RadikoShift.Infrastructure
         public const string KeyRefreshHour    = "RefreshHour";
         public const string KeyRefreshMinute  = "RefreshMinute";
         public const string KeyParallelCount  = "ParallelCount";
+        public const string KeyLastRefreshLog = "LastRefreshLog";
 
         public const int DefaultRefreshHour   = 6;
         public const int DefaultRefreshMinute = 0;
@@ -34,6 +36,22 @@ namespace RadikoShift.Infrastructure
             await _db.SaveChangesAsync();
         }
 
+        /// <summary>番組表更新ログを保存する</summary>
+        public async Task SaveRefreshLogAsync(RefreshLog log)
+        {
+            var json = JsonSerializer.Serialize(log);
+            await SetAsync(KeyLastRefreshLog, json);
+        }
+
+        /// <summary>番組表更新ログを取得する。未実行の場合は null を返す</summary>
+        public RefreshLog? GetLastRefreshLog()
+        {
+            var setting = _db.AppSettings.Find(KeyLastRefreshLog);
+            if (setting == null) return null;
+            try { return JsonSerializer.Deserialize<RefreshLog>(setting.Value); }
+            catch { return null; }
+        }
+
         private int GetInt(string key, int defaultValue)
         {
             var setting = _db.AppSettings.Find(key);
@@ -41,5 +59,18 @@ namespace RadikoShift.Infrastructure
                 return v;
             return defaultValue;
         }
+    }
+
+    /// <summary>番組表更新ジョブの実行結果ログ</summary>
+    public class RefreshLog
+    {
+        /// <summary>実行開始日時（JST）</summary>
+        public DateTimeOffset StartedAt  { get; set; }
+        /// <summary>実行終了日時（JST）</summary>
+        public DateTimeOffset FinishedAt { get; set; }
+        /// <summary>成功 / 失敗</summary>
+        public bool Succeeded { get; set; }
+        /// <summary>ログ行（JournalWriteLine の出力と同形式）</summary>
+        public List<string> Lines { get; set; } = [];
     }
 }

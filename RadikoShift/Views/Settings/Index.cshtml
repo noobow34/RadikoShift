@@ -14,9 +14,20 @@
                 <p class="text-muted small mb-3">
                     今すぐ番組表を取得・更新します。通常は定期実行されますが、すぐに最新の番組情報が必要な場合にご利用ください。
                 </p>
-                <button type="button" class="btn btn-primary w-100" id="btnRunNow">
-                    今すぐ実行
-                </button>
+                @* 直近実行サマリー *@
+                <div id="lastRunSummary" class="mb-3 p-2 rounded border small d-none">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span id="summaryBadge" class="badge"></span>
+                        <span class="text-muted">開始: <span id="summaryStartedAt"></span></span>
+                        <span class="text-muted">終了: <span id="summaryFinishedAt"></span></span>
+                        <span class="text-muted">所要: <span id="summaryElapsed"></span></span>
+                    </div>
+                </div>
+                <div id="lastRunNone" class="mb-3 text-muted small d-none">実行履歴なし</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary w-50" id="btnRunNow">今すぐ実行</button>
+                    <button type="button" class="btn btn-outline-secondary w-50" id="btnShowLog">ログを見る</button>
+                </div>
             </div>
         </div>
     </div>
@@ -56,6 +67,37 @@
     </div>
 </div>
 
+<!-- 実行ログ モーダル -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logModalLabel">番組表更新 直近実行ログ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+                <!-- サマリー -->
+                <div id="logSummary" class="mb-3 d-none">
+                    <div class="d-flex gap-3 align-items-center flex-wrap">
+                        <span id="logBadge" class="badge fs-6"></span>
+                        <small class="text-muted">開始: <span id="logStartedAt"></span></small>
+                        <small class="text-muted">終了: <span id="logFinishedAt"></span></small>
+                        <small class="text-muted">所要: <span id="logElapsed"></span></small>
+                    </div>
+                </div>
+                <!-- ログ本文 -->
+                <pre id="logContent"
+                     class="bg-dark text-light rounded p-3 small"
+                     style="max-height:460px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;">
+                </pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="appToast" class="toast text-bg-success border-0">
@@ -72,6 +114,28 @@
         toastEl.querySelector('.toast-body').textContent = message;
         new bootstrap.Toast(toastEl, { delay: 2000 }).show();
     }
+
+    // サマリーをカードに反映する共通関数
+    function applyLogSummary(res) {
+        const summaryEl = document.getElementById('lastRunSummary');
+        const noneEl    = document.getElementById('lastRunNone');
+        if (!res.exists) {
+            summaryEl.classList.add('d-none');
+            noneEl.classList.remove('d-none');
+            return;
+        }
+        const badge = document.getElementById('summaryBadge');
+        badge.textContent = res.succeeded ? '成功' : '失敗';
+        badge.className   = 'badge ' + (res.succeeded ? 'bg-success' : 'bg-danger');
+        document.getElementById('summaryStartedAt').textContent  = res.startedAt;
+        document.getElementById('summaryFinishedAt').textContent = res.finishedAt;
+        document.getElementById('summaryElapsed').textContent    = res.elapsed;
+        noneEl.classList.add('d-none');
+        summaryEl.classList.remove('d-none');
+    }
+
+    // ページロード時にサマリー取得
+    $.get('/Settings/GetLastRefreshLog').done(applyLogSummary);
 
     // 今すぐ実行
     document.getElementById('btnRunNow').addEventListener('click', function () {
@@ -114,5 +178,66 @@
                 btn.textContent = '保存';
             });
     });
+
+    // ログ表示
+    document.getElementById('btnShowLog').addEventListener('click', function () {
+        const logContent = document.getElementById('logContent');
+        const logSummary = document.getElementById('logSummary');
+        logContent.textContent = '読み込み中...';
+        logSummary.classList.add('d-none');
+
+        $.get('/Settings/GetLastRefreshLog')
+            .done(function (res) {
+                if (!res.exists) {
+                    logContent.textContent = '実行履歴がありません。';
+                } else {
+                    const badge = document.getElementById('logBadge');
+                    badge.textContent  = res.succeeded ? '成功' : '失敗';
+                    badge.className    = 'badge fs-6 ' + (res.succeeded ? 'bg-success' : 'bg-danger');
+                    document.getElementById('logStartedAt').textContent  = res.startedAt;
+                    document.getElementById('logFinishedAt').textContent = res.finishedAt;
+                    document.getElementById('logElapsed').textContent    = res.elapsed;
+                    logSummary.classList.remove('d-none');
+                    logContent.textContent = res.lines.join('\n');
+                    logContent.scrollTop = logContent.scrollHeight;
+                }
+            })
+            .fail(function () {
+                logContent.textContent = 'ログの取得に失敗しました。';
+            });
+
+        new bootstrap.Modal(document.getElementById('logModal')).show();
+    });
 </script>
 }
+
+<!-- 実行ログ モーダル -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logModalLabel">番組表更新 直近実行ログ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+                <!-- サマリー -->
+                <div id="logSummary" class="mb-3 d-none">
+                    <div class="d-flex gap-3 align-items-center flex-wrap">
+                        <span id="logBadge" class="badge fs-6"></span>
+                        <small class="text-muted">開始: <span id="logStartedAt"></span></small>
+                        <small class="text-muted">終了: <span id="logFinishedAt"></span></small>
+                        <small class="text-muted">所要: <span id="logElapsed"></span></small>
+                    </div>
+                </div>
+                <!-- ログ本文 -->
+                <pre id="logContent"
+                     class="bg-dark text-light rounded p-3 small"
+                     style="max-height:460px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;">
+                </pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>

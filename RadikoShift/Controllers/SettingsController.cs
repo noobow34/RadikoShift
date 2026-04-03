@@ -52,5 +52,22 @@ namespace RadikoShift.Controllers
             this.JournalWriteLine("番組表更新を手動実行");
             return Json(new { success = true, message = "番組表更新を開始しました。完了までしばらくお待ちください。" });
         }
+        [HttpGet]
+        public IActionResult GetLastRefreshLog()
+        {
+            var log = _settings.GetLastRefreshLog();
+            if (log == null)
+                return Json(new { exists = false });
+
+            return Json(new
+            {
+                exists     = true,
+                succeeded  = log.Succeeded,
+                startedAt  = log.StartedAt.ToString("yyyy/MM/dd HH:mm:ss"),
+                finishedAt = log.FinishedAt.ToString("yyyy/MM/dd HH:mm:ss"),
+                elapsed    = (log.FinishedAt - log.StartedAt).ToString(@"mm\:ss\.ff"),
+                lines      = log.Lines,
+            });
+        }
     }
 }

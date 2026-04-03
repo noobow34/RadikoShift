@@ -16,6 +16,8 @@ namespace RadikoShift.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             ShiftContext? stagingContext = null;
+            var startedAt = DateTimeOffset.Now;
+            this.JournalBeginCapture();
 
             try
             {
@@ -90,6 +92,14 @@ namespace RadikoShift.Jobs
 
                 sw.Stop();
                 this.JournalWriteLine($"番組表更新終了:{sw}");
+
+                await SaveRefreshLogAsync(new RefreshLog
+                {
+                    StartedAt  = startedAt,
+                    FinishedAt = DateTimeOffset.Now,
+                    Succeeded  = true,
+                    Lines      = this.JournalGetCaptured(),
+                });
             }
             catch (Exception ex)
             {
@@ -110,10 +120,33 @@ namespace RadikoShift.Jobs
                     Channel = Environment.GetEnvironmentVariable("SLACK_NOTIFY_CHANNEL")
                 });
                 this.JournalWriteLine(errorMessage);
+
+                await SaveRefreshLogAsync(new RefreshLog
+                {
+                    StartedAt  = startedAt,
+                    FinishedAt = DateTimeOffset.Now,
+                    Succeeded  = false,
+                    Lines      = this.JournalGetCaptured(),
+                });
             }
             finally
             {
                 stagingContext?.Dispose();
+            }
+        }
+
+        /// <summary>DIに依存せず直接DBコンテキストを生成してログを保存する</summary>
+        private static async Task SaveRefreshLogAsync(RefreshLog log)
+        {
+            try
+            {
+                using var db  = new ShiftContext();
+                var svc = new AppSettingsService(db);
+                await svc.SaveRefreshLogAsync(log);
+            }
+            catch
+            {
+                // ログ保存失敗はメイン処理に影響させない
             }
         }
 
