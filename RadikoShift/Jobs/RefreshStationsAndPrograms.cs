@@ -86,11 +86,14 @@ namespace RadikoShift.Jobs
 
                 await Task.WhenAll(tasks);
 
-                // ── ステージングへBulk Insert ─────────────────────────
+                // ── ステージングへBulk Insert（並列）────────────────────
                 this.JournalWriteLine("ステージングへ保存");
-                var uploader = new NpgsqlBulkUploader(stagingContext);
-                uploader.Insert(stations);  // stations_staging へ
-                uploader.Insert(programs);  // programs_staging へ
+                await using var stationsContext = new ShiftStagingContext();
+                await using var programsContext = new ShiftStagingContext();
+                await Task.WhenAll(
+                    new NpgsqlBulkUploader(stationsContext).InsertAsync(stations),
+                    new NpgsqlBulkUploader(programsContext).InsertAsync(programs)
+                );
 
                 // ── アトミック切り替え ────────────────────────────────
                 this.JournalWriteLine("テーブル切り替え");
