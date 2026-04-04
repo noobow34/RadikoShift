@@ -43,6 +43,16 @@ namespace RadikoShift.Infrastructure
             await _db.SaveChangesAsync();
         }
 
+        /// <summary>番組表更新ジョブの開始を記録する（実行中状態）</summary>
+        public async Task SaveRefreshLogStartAsync(DateTimeOffset startedAt)
+        {
+            await SaveRefreshLogAsync(new RefreshLog
+            {
+                IsRunning = true,
+                StartedAt = startedAt,
+            });
+        }
+
         /// <summary>番組表更新ログを保存する</summary>
         public async Task SaveRefreshLogAsync(RefreshLog log)
         {
@@ -71,6 +81,8 @@ namespace RadikoShift.Infrastructure
     /// <summary>番組表更新ジョブの実行結果ログ</summary>
     public class RefreshLog
     {
+        /// <summary>実行中フラグ（完了時は false）</summary>
+        public bool IsRunning { get; set; }
         /// <summary>実行開始日時（JST）</summary>
         public DateTimeOffset StartedAt  { get; set; }
         /// <summary>実行終了日時（JST）</summary>

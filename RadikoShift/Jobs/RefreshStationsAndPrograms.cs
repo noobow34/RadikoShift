@@ -19,6 +19,12 @@ namespace RadikoShift.Jobs
             var startedAt = DateTimeOffset.Now;
             this.JournalBeginCapture();
 
+            await SaveRefreshLogAsync(new RefreshLog
+            {
+                IsRunning = true,
+                StartedAt = startedAt,
+            });
+
             try
             {
                 this.JournalWriteLine("番組表更新開始");

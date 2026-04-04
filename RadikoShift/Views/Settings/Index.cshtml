@@ -8,10 +8,10 @@
 <div class="row g-4">
     @* 手動実行カード *@
     <div class="col-12 col-md-6">
-        <div class="card h-100">
-            <div class="card-header fw-bold">番組表の手動更新</div>
+        <div class="card h-100" id="runNowCard">
+            <div class="card-header fw-bold" id="runNowCardHeader">番組表の手動更新</div>
             <div class="card-body d-flex flex-column justify-content-between">
-                <p class="text-muted small mb-3">
+                <p class="small mb-3" id="runNowCardDesc">
                     今すぐ番組表を取得・更新します。通常は定期実行されますが、すぐに最新の番組情報が必要な場合にご利用ください。
                 </p>
                 @* 直近実行サマリー *@
@@ -125,17 +125,72 @@
             return;
         }
         const badge = document.getElementById('summaryBadge');
-        badge.textContent = res.succeeded ? '成功' : '失敗';
-        badge.className   = 'badge ' + (res.succeeded ? 'bg-success' : 'bg-danger');
+        if (res.isRunning) {
+            badge.textContent = '実行中...';
+            badge.className   = 'badge bg-warning text-dark';
+        } else {
+            badge.textContent = res.succeeded ? '成功' : '失敗';
+            badge.className   = 'badge ' + (res.succeeded ? 'bg-success' : 'bg-danger');
+        }
         document.getElementById('summaryStartedAt').textContent  = res.startedAt;
-        document.getElementById('summaryFinishedAt').textContent = res.finishedAt;
-        document.getElementById('summaryElapsed').textContent    = res.elapsed;
+        document.getElementById('summaryFinishedAt').textContent = res.isRunning ? '—' : res.finishedAt;
+        document.getElementById('summaryElapsed').textContent    = res.isRunning ? '—' : res.elapsed;
         noneEl.classList.add('d-none');
         summaryEl.classList.remove('d-none');
     }
 
-    // ページロード時にサマリー取得
-    $.get('/Settings/GetLastRefreshLog').done(applyLogSummary);
+    // ページロード時にサマリー取得（実行中ならそのままポーリング開始）
+    $.get('/Settings/GetLastRefreshLog').done(function (res) {
+        applyLogSummary(res);
+        if (res.exists && res.isRunning) startPolling();
+    });
+
+    // ポーリング設定
+    const POLL_INTERVAL_MS = 3000;
+    const POLL_TIMEOUT_MS  = 5 * 60 * 1000; // 5分
+    let pollTimer    = null;
+    let pollDeadline = null;
+
+    function setCardRunning(running) {
+        const card       = document.getElementById('runNowCard');
+        const header     = document.getElementById('runNowCardHeader');
+        const desc       = document.getElementById('runNowCardDesc');
+        if (running) {
+            card.classList.add('border-warning');
+            header.classList.add('bg-warning', 'bg-opacity-25');
+            desc.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>番組表を更新しています。しばらくお待ちください...';
+            desc.classList.remove('text-muted');
+        } else {
+            card.classList.remove('border-warning');
+            header.classList.remove('bg-warning', 'bg-opacity-25');
+            desc.textContent = '今すぐ番組表を取得・更新します。通常は定期実行されますが、すぐに最新の番組情報が必要な場合にご利用ください。';
+            desc.classList.add('text-muted');
+        }
+    }
+
+    function startPolling() {
+        if (pollTimer) return; // 二重起動防止
+        setCardRunning(true);
+        pollDeadline = Date.now() + POLL_TIMEOUT_MS;
+        pollTimer = setInterval(async function () {
+            if (Date.now() > pollDeadline) {
+                stopPolling();
+                showToast('実行完了を確認できませんでした（タイムアウト）。', 'danger');
+                return;
+            }
+            $.get('/Settings/GetLastRefreshLog').done(function (res) {
+                if (!res.exists || res.isRunning) return; // まだ実行中
+                stopPolling();
+                applyLogSummary(res);
+                showToast(res.succeeded ? '番組表更新が完了しました。' : '番組表更新が失敗しました。', res.succeeded ? 'success' : 'danger');
+            });
+        }, POLL_INTERVAL_MS);
+    }
+
+    function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        setCardRunning(false);
+    }
 
     // 今すぐ実行
     document.getElementById('btnRunNow').addEventListener('click', function () {
@@ -146,14 +201,22 @@
         $.post('/Settings/RunNow')
             .done(function (res) {
                 showToast(res.message, 'success');
+                startPolling();
             })
             .fail(function () {
                 showToast('エラーが発生しました。', 'danger');
-            })
-            .always(function () {
                 btn.disabled = false;
                 btn.textContent = '今すぐ実行';
             });
+
+        // ポーリング完了 or タイムアウト後にボタンを戻す
+        const restoreBtn = setInterval(function () {
+            if (!pollTimer) {
+                btn.disabled = false;
+                btn.textContent = '今すぐ実行';
+                clearInterval(restoreBtn);
+            }
+        }, 500);
     });
 
     // 設定保存

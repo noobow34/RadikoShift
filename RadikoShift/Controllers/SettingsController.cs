@@ -62,6 +62,7 @@ namespace RadikoShift.Controllers
             return Json(new
             {
                 exists     = true,
+                isRunning  = log.IsRunning,
                 succeeded  = log.Succeeded,
                 startedAt  = log.StartedAt.ToString("yyyy/MM/dd HH:mm:ss"),
                 finishedAt = log.FinishedAt.ToString("yyyy/MM/dd HH:mm:ss"),
