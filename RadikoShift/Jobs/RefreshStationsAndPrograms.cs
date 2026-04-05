@@ -7,7 +7,6 @@ using RadikoShift.Radiko;
 using SlackNet;
 using SlackNet.WebApi;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace RadikoShift.Jobs
 {
@@ -34,9 +33,6 @@ namespace RadikoShift.Jobs
 
                 using var httpClient = await RadikoClient.CreateHttpClient(radikoMail, radikoPass);
                 this.JournalWriteLine("ログイン完了");
-
-                Stopwatch sw = new();
-                sw.Start();
 
                 int partitionCount = AppSettingsService.DefaultParallelCount;
                 if (context.JobDetail.JobDataMap.ContainsKey("ParallelCount"))
@@ -99,15 +95,15 @@ namespace RadikoShift.Jobs
                 this.JournalWriteLine("テーブル切り替え");
                 await SwapTablesAsync(stagingContext);
 
-                sw.Stop();
-                this.JournalWriteLine($"番組表更新終了:{sw}");
+                var finishedAt = DateTimeOffset.Now;
+                this.JournalWriteLine($"番組表更新終了:{finishedAt - startedAt}");
 
                 await SaveRefreshLogAsync(new RefreshLog
                 {
-                    StartedAt  = startedAt,
-                    FinishedAt = DateTimeOffset.Now,
-                    Succeeded  = true,
-                    Lines      = this.JournalGetCaptured(),
+                    StartedAt = startedAt,
+                    FinishedAt = finishedAt,
+                    Succeeded = true,
+                    Lines = this.JournalGetCaptured(),
                 });
             }
             catch (Exception ex)
@@ -132,10 +128,10 @@ namespace RadikoShift.Jobs
 
                 await SaveRefreshLogAsync(new RefreshLog
                 {
-                    StartedAt  = startedAt,
+                    StartedAt = startedAt,
                     FinishedAt = DateTimeOffset.Now,
-                    Succeeded  = false,
-                    Lines      = this.JournalGetCaptured(),
+                    Succeeded = false,
+                    Lines = this.JournalGetCaptured(),
                 });
             }
             finally
@@ -149,7 +145,7 @@ namespace RadikoShift.Jobs
         {
             try
             {
-                using var db  = new ShiftContext();
+                using var db = new ShiftContext();
                 var svc = new AppSettingsService(db);
                 await svc.SaveRefreshLogAsync(log);
             }
@@ -192,7 +188,7 @@ namespace RadikoShift.Jobs
                 await db.ExecuteSqlRawAsync("ALTER TABLE programs_staging RENAME TO programs");
 
                 await db.ExecuteSqlRawAsync("DROP TABLE stations_old");
-                await db.ExecuteSqlRawAsync("DROP TABLE programs_old cascade");
+                await db.ExecuteSqlRawAsync("DROP TABLE programs_old");
 
                 await tx.CommitAsync();
             }

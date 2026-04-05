@@ -20,9 +20,9 @@ namespace RadikoShift.Infrastructure
             var line = $"【{obj.GetType().Name}:{instanceId}】{value}";
             Console.WriteLine(line);
 
-            // ジョブログバッファにも追記
+            // ジョブログバッファには時刻付きで追記
             if (_jobLogBuffer.TryGetValue(obj, out var buf))
-                buf.Add(line);
+                buf.Add($"[{DateTime.Now:HH:mm:ss}]{line}");
         }
 
         /// <summary>このオブジェクトのログ収集を開始する</summary>
