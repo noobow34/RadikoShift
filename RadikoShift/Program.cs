@@ -1,14 +1,8 @@
-using Auth0.AspNetCore.Authentication;
 using Quartz;
 using Quartz.Impl;
 using RadikoShift.Data;
 using RadikoShift.Infrastructure;
 using RadikoShift.Jobs;
-
-string auth0Domain   = Environment.GetEnvironmentVariable("AUTH0_DOMAIN")    ?? "";
-string auth0ClientId = Environment.GetEnvironmentVariable("AUTH0_CLIENT_ID") ?? "";
-Console.WriteLine($"AUTH0_DOMAIN:{auth0Domain.Length}");
-Console.WriteLine($"AUTH0_CLIENT_ID:{auth0ClientId.Length}");
 
 string rsCs = Environment.GetEnvironmentVariable("RADIKOSHIFT_CONNECTION_STRING") ?? "";
 Console.WriteLine($"RADIKOSHIFT_CONNECTION_STRING:{rsCs.Length}");
@@ -49,12 +43,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddAuth0WebAppAuthentication(options =>
-{
-    options.Domain   = auth0Domain;
-    options.ClientId = auth0ClientId;
-});
-
 builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(options =>
 {
     options.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(
@@ -72,8 +60,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
 
 app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
 app.MapStaticAssets();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}")
    .WithStaticAssets();

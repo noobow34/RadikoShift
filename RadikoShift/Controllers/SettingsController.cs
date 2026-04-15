@@ -5,7 +5,6 @@ using RadikoShift.ViewModel;
 
 namespace RadikoShift.Controllers
 {
-    [Authorize]
     public class SettingsController : Controller
     {
         private readonly AppSettingsService _settings;

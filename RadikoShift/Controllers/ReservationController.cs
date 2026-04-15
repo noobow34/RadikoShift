@@ -7,7 +7,6 @@ using RadikoShift.Reservations;
 
 namespace RadikoShift.Controllers
 {
-    [Authorize]
     public class ReservationController : Controller
     {
         private readonly ShiftContext _db;

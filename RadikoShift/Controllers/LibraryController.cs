@@ -8,7 +8,6 @@ using System.Data;
 
 namespace RadikoShift.Controllers
 {
-    [Authorize]
     public class LibraryController : Controller
     {
         private readonly ShiftContext _db;

@@ -8,7 +8,6 @@ using System.Diagnostics;
 
 namespace RadikoShift.Controllers
 {
-    [Authorize]
     public class HomeController : Controller
     {
         private readonly ShiftContext _db;
